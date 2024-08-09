@@ -1,0 +1,19 @@
+[package]
+name = "gbt_sip_server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = { version = "0.4.38" }
+
+encoding_rs = { version = "0.8.34" }
+
+time = { version = "0.3.36", features = ["formatting", "macros"] }
+
+tracing = { version = "0.1.40" }
+tracing-appender = { version = "0.2.3" }
+tracing-subscriber = { version = "0.3.18 ", features = ["env-filter", "time", "local-time", "json"] }
+
+structopt = { version = "0.3.26" }
+
+tokio = { version = "1.39.2", features = ["full"] }
