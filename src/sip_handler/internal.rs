@@ -13,7 +13,7 @@ impl SipRequestHandler {
     pub fn new(
         user_name: &str,
         password: &str,
-        algorithm: rsip::headers::auth::Algorithm,
+        algorithm: &str,
         nonce: &str,
         cnonce: &str,
         realm: &str,
@@ -21,7 +21,7 @@ impl SipRequestHandler {
         SipRequestHandler {
             user_name: String::from(user_name),
             password: String::from(password),
-            algorithm: algorithm,
+            algorithm: rsip::headers::auth::Algorithm::try_from(algorithm).unwrap(),
             nonce: String::from(nonce),
             cnonce: String::from(cnonce),
             realm: String::from(realm),

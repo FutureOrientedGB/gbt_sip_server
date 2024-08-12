@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use encoding_rs;
 
 use tokio;
@@ -29,10 +27,10 @@ pub async fn run_forever(
             tracing::info!("UdpSocket::bind({}) ok", &local_addr);
 
             let mut buf = [0; MAX_UDP_SIZE];
-            let mut gbt_hander = SipRequestHandler::new(
+            let mut gbt_handler = SipRequestHandler::new(
                 &user_name,
                 &password,
-                rsip::headers::auth::Algorithm::from_str(&algorithm).unwrap(),
+                &algorithm,
                 &nonce,
                 &cnonce,
                 &realm,
@@ -58,7 +56,7 @@ pub async fn run_forever(
                             &msg
                         );
 
-                        gbt_hander
+                        gbt_handler
                             .dispatch(&socket, client_addr, msg.to_owned().to_string())
                             .await;
                     }

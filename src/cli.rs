@@ -14,7 +14,7 @@ pub struct CommandLines {
     #[structopt(long, default_value = "d383cf85b0e8ce0b")]
     pub password: String,
 
-    #[structopt(long, default_value = "MD5")]
+    #[structopt(long, default_value = "md5")]
     pub algorithm: String,
 
     #[structopt(long, default_value = "f89d0eaccaf1c90453e2f84688ec800f05")]

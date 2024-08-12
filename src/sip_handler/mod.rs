@@ -74,11 +74,16 @@ impl SipRequestHandler {
                 };
 
                 if response_data.is_empty() {
+                    tracing::error!("skip empty response");
                     return;
                 }
 
                 let (msg, _encoding, has_error) =
                     encoding_rs::GB18030.encode(&response_data);
+                if has_error {
+                    tracing::error!("encoding_rs::GB18030.encode error");
+                    return;
+                }
 
                 match socket.send_to(msg.to_vec().as_slice(), client_addr).await {
                     Err(e) => {
