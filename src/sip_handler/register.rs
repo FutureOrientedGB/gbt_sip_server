@@ -1,12 +1,56 @@
-use rsip;
+use rsip::{
+    self,
+    prelude::{HeadersExt, ToTypedHeader},
+};
 
-use crate::sip_handler::internal::SipRequestHander;
+use crate::sip_handler::internal::SipRequestHandler;
 
-impl SipRequestHander {
+impl SipRequestHandler {
+    pub async fn on_register(&mut self, request: rsip::Request) -> String {
+        if let Some(auth) = request.authorization_header() {
+            if let Ok(auth) = auth.typed() {
+                if self.is_authorized(request.method(), &auth.uri, &auth.response) {
+                    return self.on_register_200(request).await;
+                }
+            }
+        }
 
-    pub async fn on_resiger(&mut self, request: rsip::Request) -> Vec<u8> {
+        return self.on_register_401(request).await;
+    }
 
+    async fn on_register_401(&self, request: rsip::Request) -> String {
+        let mut headers: rsip::Headers = Default::default();
+        headers.push(request.via_header().unwrap().clone().into());
+        headers.push(request.from_header().unwrap().clone().into());
+        let to = request.to_header().unwrap().typed().unwrap();
+        headers.push(to.with_tag("1410948204".into()).into());
+        headers.push(request.call_id_header().unwrap().clone().into());
+        headers.push(request.cseq_header().unwrap().clone().into());
+        headers.push(rsip::Header::ContentLength(Default::default()));
+        headers.push(rsip::Header::Server(Default::default()));
 
-        return vec![];
+        headers.push(
+            rsip::typed::WwwAuthenticate {
+                realm: self.realm.clone(),
+                nonce: self.nonce.clone(),
+                algorithm: Some(self.algorithm),
+                opaque: Some("".into()),
+                ..Default::default()
+            }
+            .into(),
+        );
+
+        let response = rsip::Response {
+            status_code: 401.into(),
+            headers,
+            version: rsip::Version::V2,
+            body: Default::default(),
+        };
+
+        return response.to_string();
+    }
+
+    async fn on_register_200(&self, request: rsip::Request) -> String {
+        return String::new();
     }
 }

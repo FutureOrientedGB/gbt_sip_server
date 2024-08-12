@@ -1,9 +1,9 @@
 use rsip;
 
-use crate::sip_handler::internal::SipRequestHander;
+use crate::sip_handler::internal::SipRequestHandler;
 
-impl SipRequestHander {
-    pub async fn on_publish(&mut self, request: rsip::Request) -> Vec<u8> {
-        return vec![];
+impl SipRequestHandler {
+    pub async fn on_publish(&mut self, request: rsip::Request) -> String {
+        return String::new();
     }
 }

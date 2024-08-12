@@ -1,12 +1,23 @@
+use std::str::FromStr;
+
 use encoding_rs;
 
 use tokio;
 
-use crate::sip_handler::SipRequestHander;
+use crate::sip_handler::SipRequestHandler;
 
 const MAX_UDP_SIZE: usize = 65535;
 
-pub async fn run_forever(host: &String, port: i32) -> Result<(), std::io::Error> {
+pub async fn run_forever(
+    host: &String,
+    port: i32,
+    user_name: &String,
+    password: &String,
+    algorithm: &String,
+    nonce: &String,
+    cnonce: &String,
+    realm: &String,
+) -> Result<(), std::io::Error> {
     let local_addr = format!("{host}:{port}");
 
     match tokio::net::UdpSocket::bind(&local_addr).await {
@@ -15,13 +26,17 @@ pub async fn run_forever(host: &String, port: i32) -> Result<(), std::io::Error>
             return Err(e);
         }
         Ok(socket) => {
-            tracing::info!(
-                "UdpSocket::bind({}) ok",
-                &local_addr
-            );
+            tracing::info!("UdpSocket::bind({}) ok", &local_addr);
 
             let mut buf = [0; MAX_UDP_SIZE];
-            let mut gbt_hander = SipRequestHander::default();
+            let mut gbt_hander = SipRequestHandler::new(
+                &user_name,
+                &password,
+                rsip::headers::auth::Algorithm::from_str(&algorithm).unwrap(),
+                &nonce,
+                &cnonce,
+                &realm,
+            );
 
             loop {
                 match socket.recv_from(&mut buf).await {
@@ -37,13 +52,15 @@ pub async fn run_forever(host: &String, port: i32) -> Result<(), std::io::Error>
                         }
 
                         tracing::info!(
-                            "UdpSocket::recv_from({}) ok, amount: {}, msg: {}",
+                            "UdpSocket::recv_from({}) ok, amount: {}, msg:\n{}",
                             client_addr,
                             amount,
-                            msg
+                            &msg
                         );
 
-                        gbt_hander.dispatch(&socket, client_addr, &buf[..amount]).await;
+                        gbt_hander
+                            .dispatch(&socket, client_addr, msg.to_owned().to_string())
+                            .await;
                     }
                 }
             }

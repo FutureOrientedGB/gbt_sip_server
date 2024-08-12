@@ -1,7 +1,7 @@
 pub mod internal;
 use std::net::SocketAddr;
 
-pub use internal::SipRequestHander;
+pub use internal::SipRequestHandler;
 pub mod ack;
 pub mod bye;
 pub mod cancel;
@@ -21,16 +21,16 @@ use rsip;
 
 use tokio;
 
-impl SipRequestHander {
-    pub async fn dispatch(&mut self, socket: &tokio::net::UdpSocket, client_addr: SocketAddr, data: &[u8]){
-        match rsip::Request::try_from(data) {
+impl SipRequestHandler {
+    pub async fn dispatch(&mut self, socket: &tokio::net::UdpSocket, client_addr: SocketAddr, request_data: String){
+        match rsip::Request::try_from(request_data.as_bytes()) {
             Err(e) => {
                 tracing::error!("rsip::Request::try_from error, e: {:?}", e);
             }
             Ok(request) => {
-                let response = match request.method() {
+                let response_data = match request.method() {
                     rsip::Method::Register => {
-                        self.on_resiger(request).await
+                        self.on_register(request).await
                     }
                     rsip::Method::Ack => {
                         self.on_ack(request).await
@@ -73,11 +73,14 @@ impl SipRequestHander {
                     }
                 };
 
-                if response.is_empty() {
+                if response_data.is_empty() {
                     return;
                 }
 
-                match socket.send_to(response.as_slice(), client_addr).await {
+                let (msg, _encoding, has_error) =
+                    encoding_rs::GB18030.encode(&response_data);
+
+                match socket.send_to(msg.to_vec().as_slice(), client_addr).await {
                     Err(e) => {
                         tracing::error!(
                             "UdpSocket::send_to({}) error, e: {:?}",
@@ -87,9 +90,10 @@ impl SipRequestHander {
                     }
                     Ok(amount) => {
                         tracing::info!(
-                            "UdpSocket::send_to({}) ok, amount: {:?}",
+                            "UdpSocket::send_to({}) ok, amount: {:?}, data: \n{}",
                             client_addr,
-                            amount
+                            amount,
+                            response_data
                         );
                     }
                 }

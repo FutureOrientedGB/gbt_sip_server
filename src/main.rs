@@ -15,5 +15,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     log::open_daily_file_log(&APP_NAME, cli_args.port);
 
     // listen udp sock
-    Ok(sip_server::run_forever(&cli_args.host, cli_args.port).await?)
+    Ok(sip_server::run_forever(
+        &cli_args.host,
+        cli_args.port,
+        &cli_args.user_name,
+        &cli_args.password,
+        &cli_args.algorithm,
+        &cli_args.nonce,
+        &cli_args.cnonce,
+        &cli_args.realm,
+    )
+    .await?)
 }
