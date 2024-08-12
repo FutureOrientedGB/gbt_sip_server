@@ -4,16 +4,28 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+async-trait = { version = "0.1.81" }
+
 chrono = { version = "0.4.38" }
 
 encoding_rs = { version = "0.8.34" }
+
+ezk-sip-types = { version = "0.2.1" }
+ezk-sip-core = { version = "0.3.0", features = ["tls-rustls"] }
+ezk-sip-auth = { version = "0.1.2" }
+ezk-sip-ua = { version = "0.4.0" }
+ezk-stun-types = { version = "0.1.2" }
+ezk-stun = { version = "0.2.0" }
+ezk-sdp-types = { version = "0.3.0" }
+
+rsip = { version = "0.4.0" }
+
+structopt = { version = "0.3.26" }
 
 time = { version = "0.3.36", features = ["formatting", "macros"] }
 
 tracing = { version = "0.1.40" }
 tracing-appender = { version = "0.2.3" }
 tracing-subscriber = { version = "0.3.18 ", features = ["env-filter", "time", "local-time", "json"] }
-
-structopt = { version = "0.3.26" }
 
 tokio = { version = "1.39.2", features = ["full"] }

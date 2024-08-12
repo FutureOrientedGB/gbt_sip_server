@@ -1,0 +1,175 @@
+use std::time::Duration;
+
+use async_trait;
+
+use ezk_sip_core::transport::udp::Udp;
+use ezk_sip_core::{Endpoint, IncomingRequest, Layer, LayerKey, MayTake, Result};
+use ezk_sip_types::header::typed::Contact;
+use ezk_sip_types::uri::sip::SipUri;
+use ezk_sip_types::uri::NameAddr;
+use ezk_sip_types::{Code, Method};
+use ezk_sip_ua::dialog::{Dialog, DialogLayer};
+use ezk_sip_ua::invite::acceptor::Acceptor;
+use ezk_sip_ua::invite::session::Event;
+use ezk_sip_ua::invite::InviteLayer;
+
+use tokio::time::sleep;
+
+/// Custom layer which we use to accept incoming invites
+struct GbtHandler {
+    dialog_layer: LayerKey<DialogLayer>,
+    invite_layer: LayerKey<InviteLayer>,
+}
+
+impl GbtHandler {
+    pub async fn on_invite(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {
+        let c: SipUri = "sip:gbt@future_oriented.com".parse().unwrap();
+        let contact = Contact::new(NameAddr::uri(c));
+
+        let req = request.take();
+        let dialog =
+            Dialog::new_server(endpoint.clone(), self.dialog_layer, &req, contact).unwrap();
+        let acceptor = Acceptor::new(dialog, self.invite_layer, req).unwrap();
+
+        let response = acceptor.create_response(Code::OK, None).await.unwrap();
+
+        // Here goes SDP handling
+
+        let (mut session, _ack) = acceptor.respond_success(response).await.unwrap();
+
+        loop {
+            match session.drive().await.unwrap() {
+                Event::RefreshNeeded(event) => {
+                    event.process_default().await.unwrap();
+                }
+                Event::ReInviteReceived(event) => {
+                    let response = endpoint.create_response(&event.invite, Code::OK, None);
+
+                    event.respond_success(response).await.unwrap();
+                }
+                Event::Bye(event) => {
+                    event.process_default().await.unwrap();
+                }
+                Event::Terminated => {
+                    break;
+                }
+            }
+        }
+    }
+
+    pub async fn on_ack(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_cancel(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_bye(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_register(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {
+        let c: SipUri = "sip:gbt@future_oriented.com".parse().unwrap();
+        let contact = Contact::new(NameAddr::uri(c));
+
+        let req = request.take();
+        let dialog =
+            Dialog::new_server(endpoint.clone(), self.dialog_layer, &req, contact).unwrap();
+        let acceptor = Acceptor::new(dialog, self.invite_layer, req).unwrap();
+    }
+
+    pub async fn on_message(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_update(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_prack(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_options(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_subscribe(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_notify(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_publish(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_info(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+
+    pub async fn on_refer(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {}
+}
+
+#[async_trait::async_trait]
+impl Layer for GbtHandler {
+    fn name(&self) -> &'static str {
+        "gbt-handler"
+    }
+
+    async fn receive(&self, endpoint: &Endpoint, request: MayTake<'_, IncomingRequest>) {
+        match &request.line.method {
+            &Method::INVITE => {
+                self.on_invite(&endpoint, request).await;
+            }
+            &Method::ACK => {
+                self.on_ack(&endpoint, request).await;
+            }
+            &Method::CANCEL => {
+                self.on_cancel(&endpoint, request).await;
+            }
+            &Method::BYE => {
+                self.on_bye(&endpoint, request).await;
+            }
+            &Method::REGISTER => {
+                self.on_register(&endpoint, request).await;
+            }
+            &Method::MESSAGE => {
+                self.on_message(&endpoint, request).await;
+            }
+            &Method::UPDATE => {
+                self.on_update(&endpoint, request).await;
+            }
+            &Method::PRACK => {
+                self.on_prack(&endpoint, request).await;
+            }
+            &Method::OPTIONS => {
+                self.on_options(&endpoint, request).await;
+            }
+            &Method::SUBSCRIBE => {
+                self.on_subscribe(&endpoint, request).await;
+            }
+            &Method::NOTIFY => {
+                self.on_notify(&endpoint, request).await;
+            }
+            &Method::PUBLISH => {
+                self.on_publish(&endpoint, request).await;
+            }
+            &Method::INFO => {
+                self.on_info(&endpoint, request).await;
+            }
+            &Method::REFER => {
+                self.on_refer(&endpoint, request).await;
+            }
+            _default => {
+                return;
+            }
+        };
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt::init();
+
+    let mut builder = Endpoint::builder();
+
+    let dialog_layer = builder.add_layer(DialogLayer::default());
+    let invite_layer = builder.add_layer(InviteLayer::default());
+
+    builder.add_layer(GbtHandler {
+        dialog_layer,
+        invite_layer,
+    });
+
+    Udp::spawn(&mut builder, "0.0.0.0:5060").await?;
+
+    // Build endpoint to start the SIP Stack
+    let _endpoint = builder.build();
+
+    // Busy sleep loop
+    loop {
+        sleep(Duration::from_secs(1)).await;
+    }
+}
