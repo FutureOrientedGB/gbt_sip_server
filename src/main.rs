@@ -1,6 +1,7 @@
 pub mod cli;
 pub mod log;
 pub mod sip_handler;
+pub mod sip_message;
 pub mod sip_server;
 
 const APP_NAME: &str = "gbt_sip_server";

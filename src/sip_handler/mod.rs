@@ -58,11 +58,6 @@ impl SipRequestHandler {
                     rsip::Method::Update => self.on_update(request).await,
                 };
 
-                if response.headers().is_empty() {
-                    tracing::error!("skip empty response");
-                    return;
-                }
-
                 let mut response_data: Vec<u8> = vec![];
                 if response.body().is_empty() {
                     response_data.extend(response.to_string().as_bytes());
@@ -82,7 +77,7 @@ impl SipRequestHandler {
                             "UdpSocket::send_to({}) ok, amount: {:?}, data: \n{}",
                             client_addr,
                             amount,
-                            response
+                            response.to_string()
                         );
                     }
                 }

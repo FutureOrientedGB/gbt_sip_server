@@ -17,7 +17,7 @@ impl SipRequestHandler {
         let cmd_type = self.extract_cmd_type(&msg);
         match cmd_type.as_str() {
             "Keepalive" => {
-                return self.on_keep_alive(request).await;
+                return self.on_keep_alive(request, msg).await;
             }
             _ => {
                 return rsip::Response::default();

@@ -16,6 +16,9 @@ regex = { version = "1.10.6" }
 
 rsip = { version = "0.4.0" }
 
+serde = { version = "1.0.207", features = ["derive"] }
+serde-xml-rs = { version = "0.6.0" }
+
 structopt = { version = "0.3.26" }
 
 time = { version = "0.3.36", features = ["formatting", "macros"] }
@@ -25,3 +28,4 @@ tracing-appender = { version = "0.2.3" }
 tracing-subscriber = { version = "0.3.18 ", features = ["env-filter", "time", "local-time", "json"] }
 
 tokio = { version = "1.39.2", features = ["full"] }
+
