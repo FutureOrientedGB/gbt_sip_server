@@ -4,13 +4,13 @@ use regex::Regex;
 
 use rsip;
 
-use crate::sip_handler::internal::SipRequestHandler;
+use crate::sip_handler::base::SipRequestHandler;
 
 pub mod on_keep_alive;
 
 impl SipRequestHandler {
-    pub async fn on_message(&mut self, request: rsip::Request) -> String {
-        // decode
+    pub async fn on_message(&mut self, request: rsip::Request) -> rsip::Response {
+        // decode body
         let msg = self.decode_body(&request);
 
         // dispatch
@@ -20,7 +20,7 @@ impl SipRequestHandler {
                 return self.on_keep_alive(request).await;
             }
             _ => {
-                return String::new();
+                return rsip::Response::default();
             }
         }
     }

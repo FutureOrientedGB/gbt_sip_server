@@ -3,10 +3,10 @@ use rsip::{
     prelude::{HeadersExt, ToTypedHeader},
 };
 
-use crate::sip_handler::internal::SipRequestHandler;
+use crate::sip_handler::base::SipRequestHandler;
 
 impl SipRequestHandler {
-    pub async fn on_register(&mut self, request: rsip::Request) -> String {
+    pub async fn on_register(&mut self, request: rsip::Request) -> rsip::Response {
         if let Some(auth) = request.authorization_header() {
             if let Ok(auth) = auth.typed() {
                 if self.is_authorized(request.method(), &auth.uri, &auth.response) {
@@ -18,7 +18,7 @@ impl SipRequestHandler {
         return self.on_register_401(request).await;
     }
 
-    async fn on_register_401(&self, request: rsip::Request) -> String {
+    async fn on_register_401(&self, request: rsip::Request) -> rsip::Response {
         let mut headers: rsip::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
         headers.push(request.from_header().unwrap().clone().into());
@@ -39,17 +39,15 @@ impl SipRequestHandler {
             .into(),
         );
 
-        let response = rsip::Response {
+        rsip::Response {
             status_code: rsip::StatusCode::Unauthorized,
             headers,
             version: rsip::Version::V2,
             body: Default::default(),
-        };
-
-        return response.to_string();
+        }
     }
 
-    async fn on_register_200(&self, request: rsip::Request) -> String {
+    async fn on_register_200(&self, request: rsip::Request) -> rsip::Response {
         let mut headers: rsip::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
         headers.push(request.from_header().unwrap().clone().into());
@@ -59,13 +57,11 @@ impl SipRequestHandler {
         headers.push(request.cseq_header().unwrap().clone().into());
         headers.push(rsip::Header::ContentLength(Default::default()));
 
-        let response = rsip::Response {
+        rsip::Response {
             status_code: rsip::StatusCode::OK,
             headers,
             version: rsip::Version::V2,
             body: Default::default(),
-        };
-
-        return response.to_string();
+        }
     }
 }

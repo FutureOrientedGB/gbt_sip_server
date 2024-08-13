@@ -1,7 +1,7 @@
-pub mod internal;
 use std::net::SocketAddr;
 
-pub use internal::SipRequestHandler;
+pub mod base;
+pub use base::SipRequestHandler;
 pub mod ack;
 pub mod bye;
 pub mod cancel;
@@ -16,6 +16,7 @@ pub mod refer;
 pub mod register;
 pub mod subscribe;
 pub mod update;
+pub mod utils;
 
 use rsip::{self, prelude::HasHeaders};
 
@@ -40,7 +41,7 @@ impl SipRequestHandler {
                     request.headers().to_string() + &self.decode_body(&request)
                 );
 
-                let response_data = match request.method() {
+                let response = match request.method() {
                     rsip::Method::Register => self.on_register(request).await,
                     rsip::Method::Ack => self.on_ack(request).await,
                     rsip::Method::Bye => self.on_bye(request).await,
@@ -57,12 +58,22 @@ impl SipRequestHandler {
                     rsip::Method::Update => self.on_update(request).await,
                 };
 
-                if response_data.is_empty() {
+                if response.headers().is_empty() {
                     tracing::error!("skip empty response");
                     return;
                 }
 
-                match socket.send_to(response_data.as_bytes(), client_addr).await {
+                let mut response_data: Vec<u8> = vec![];
+                if response.body().is_empty() {
+                    response_data.extend(response.to_string().as_bytes());
+                } else {
+                    // encode body
+                    let encoded =
+                        self.encode_body(String::from_utf8(response.body().to_vec()).unwrap());
+                    response_data.extend(encoded);
+                }
+
+                match socket.send_to(response_data.as_slice(), client_addr).await {
                     Err(e) => {
                         tracing::error!("UdpSocket::send_to({}) error, e: {:?}", client_addr, e);
                     }
@@ -71,7 +82,7 @@ impl SipRequestHandler {
                             "UdpSocket::send_to({}) ok, amount: {:?}, data: \n{}",
                             client_addr,
                             amount,
-                            response_data
+                            response
                         );
                     }
                 }
