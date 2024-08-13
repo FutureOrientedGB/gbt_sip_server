@@ -1,6 +1,10 @@
+use std::str::FromStr;
+
 use rand::Rng;
 
 use rsip::{self, prelude::HeadersExt};
+
+use crate::cli::CommandLines;
 
 static CHARSET: [char; 36] = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
@@ -17,21 +21,14 @@ pub struct SipRequestHandler {
 }
 
 impl SipRequestHandler {
-    pub fn new(
-        user_name: &str,
-        password: &str,
-        algorithm: &str,
-        nonce: &str,
-        cnonce: &str,
-        realm: &str,
-    ) -> Self {
+    pub fn new(cli_args: &CommandLines) -> Self {
         SipRequestHandler {
-            user_name: String::from(user_name),
-            password: String::from(password),
-            algorithm: rsip::headers::auth::Algorithm::try_from(algorithm).unwrap(),
-            nonce: String::from(nonce),
-            cnonce: String::from(cnonce),
-            realm: String::from(realm),
+            user_name: cli_args.user_name.clone(),
+            password: cli_args.password.clone(),
+            algorithm: rsip::headers::auth::Algorithm::from_str(&cli_args.algorithm).unwrap(),
+            nonce: cli_args.nonce.clone(),
+            cnonce: cli_args.cnonce.clone(),
+            realm: cli_args.realm.clone(),
         }
     }
 

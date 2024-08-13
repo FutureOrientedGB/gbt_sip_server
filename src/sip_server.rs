@@ -2,21 +2,13 @@ use encoding_rs;
 
 use tokio;
 
+use crate::cli::CommandLines;
 use crate::sip_handler::SipRequestHandler;
 
 const MAX_UDP_SIZE: usize = 65535;
 
-pub async fn run_forever(
-    host: &String,
-    port: i32,
-    user_name: &String,
-    password: &String,
-    algorithm: &String,
-    nonce: &String,
-    cnonce: &String,
-    realm: &String,
-) -> Result<(), std::io::Error> {
-    let local_addr = format!("{host}:{port}");
+pub async fn run_forever(cli_args: &CommandLines) -> Result<(), std::io::Error> {
+    let local_addr = format!("{host}:{port}", host = cli_args.host, port = cli_args.port);
 
     match tokio::net::UdpSocket::bind(&local_addr).await {
         Err(e) => {
@@ -26,24 +18,17 @@ pub async fn run_forever(
         Ok(socket) => {
             tracing::info!("UdpSocket::bind({}) ok", &local_addr);
 
-            let mut buf = [0; MAX_UDP_SIZE];
-            let mut gbt_handler = SipRequestHandler::new(
-                &user_name,
-                &password,
-                &algorithm,
-                &nonce,
-                &cnonce,
-                &realm,
-            );
+            let mut req_recv_buff = [0; MAX_UDP_SIZE];
+            let mut sip_request_handler = SipRequestHandler::new(&cli_args);
 
             loop {
-                match socket.recv_from(&mut buf).await {
+                match socket.recv_from(&mut req_recv_buff).await {
                     Err(e) => {
                         tracing::error!("UdpSocket::recv_from error, e: {:?}", e);
                     }
                     Ok((amount, client_addr)) => {
                         let (msg, _encoding, has_error) =
-                            encoding_rs::GB18030.decode(&buf[..amount]);
+                            encoding_rs::GB18030.decode(&req_recv_buff[..amount]);
                         if has_error {
                             tracing::error!("encoding_rs::GB18030.decode error");
                             continue;
@@ -56,7 +41,7 @@ pub async fn run_forever(
                             &msg
                         );
 
-                        gbt_handler
+                        sip_request_handler
                             .dispatch(&socket, client_addr, msg.to_owned().to_string())
                             .await;
                     }
