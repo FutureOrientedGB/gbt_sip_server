@@ -27,7 +27,6 @@ impl SipRequestHandler {
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
         headers.push(rsip::Header::ContentLength(Default::default()));
-        headers.push(rsip::Header::Server(Default::default()));
 
         headers.push(
             rsip::typed::WwwAuthenticate {
@@ -59,7 +58,6 @@ impl SipRequestHandler {
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
         headers.push(rsip::Header::ContentLength(Default::default()));
-        headers.push(rsip::Header::Server(Default::default()));
 
         let response = rsip::Response {
             status_code: rsip::StatusCode::OK,

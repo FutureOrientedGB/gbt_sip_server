@@ -1,5 +1,3 @@
-use encoding_rs;
-
 use tokio;
 
 use crate::cli::CommandLines;
@@ -27,22 +25,8 @@ pub async fn run_forever(cli_args: &CommandLines) -> Result<(), std::io::Error> 
                         tracing::error!("UdpSocket::recv_from error, e: {:?}", e);
                     }
                     Ok((amount, client_addr)) => {
-                        let (msg, _encoding, has_error) =
-                            encoding_rs::GB18030.decode(&req_recv_buff[..amount]);
-                        if has_error {
-                            tracing::error!("encoding_rs::GB18030.decode error");
-                            continue;
-                        }
-
-                        tracing::info!(
-                            "UdpSocket::recv_from({}) ok, amount: {}, msg:\n{}",
-                            client_addr,
-                            amount,
-                            &msg
-                        );
-
                         sip_request_handler
-                            .dispatch(&socket, client_addr, msg.to_owned().to_string())
+                            .dispatch(&socket, client_addr, &req_recv_buff[..amount])
                             .await;
                     }
                 }

@@ -1,14 +1,17 @@
 use std::str::FromStr;
 
+use encoding_rs;
+
 use rand::Rng;
 
 use rsip::{self, prelude::HeadersExt};
 
+use tracing;
+
 use crate::cli::CommandLines;
 
-static CHARSET: [char; 36] = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-    'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+static CHARSET: [char; 16] = [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
 ];
 
 pub struct SipRequestHandler {
@@ -68,5 +71,25 @@ impl SipRequestHandler {
         }
 
         return String::new();
+    }
+
+    pub fn decode_body(&self, request: &rsip::Request) -> String {
+        let (body, _encoding, has_error) = encoding_rs::GB18030.decode(&request.body());
+        if has_error {
+            tracing::error!("encoding_rs::GB18030.decode error");
+            return String::new();
+        }
+
+        return body.to_string();
+    }
+
+    pub fn encode_body(&self, data: String) -> Vec<u8> {
+        let (msg, _encoding, has_error) = encoding_rs::GB18030.encode(&data);
+        if has_error {
+            tracing::error!("encoding_rs::GB18030.encode error");
+            return vec![];
+        }
+
+        return msg.to_vec();
     }
 }
