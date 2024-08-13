@@ -32,3 +32,5 @@ tracing-subscriber = { version = "0.3.18 ", features = ["env-filter", "time", "l
 
 tokio = { version = "1.39.2", features = ["full"] }
 
+uuid = { version = "1.10.0", features = ["v4", "zerocopy"] }
+

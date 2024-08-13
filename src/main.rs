@@ -6,6 +6,7 @@ pub mod sip_server;
 pub mod http_handler;
 pub mod http_message;
 pub mod http_server;
+pub mod sip_device;
 
 const APP_NAME: &str = "gbt_sip_server";
 const APP_VERSION: &str = "2024.8.12.1";
