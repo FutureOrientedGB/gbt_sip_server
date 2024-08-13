@@ -5,7 +5,7 @@ use time;
 use tracing_appender;
 use tracing_subscriber;
 
-pub fn open_daily_file_log(name: &str, port: i32) {
+pub fn open_daily_file_log(name: &str, port: u16) {
     let mut log_dir = std::env::current_exe()
         .unwrap()
         .parent()

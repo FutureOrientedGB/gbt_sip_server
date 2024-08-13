@@ -1,5 +1,3 @@
-use encoding_rs;
-
 use regex::Regex;
 
 use rsip;

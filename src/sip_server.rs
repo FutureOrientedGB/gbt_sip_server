@@ -6,7 +6,7 @@ use crate::sip_handler::SipRequestHandler;
 const MAX_UDP_SIZE: usize = 65535;
 
 pub async fn run_forever(cli_args: &CommandLines) -> Result<(), std::io::Error> {
-    let local_addr = format!("{host}:{port}", host = cli_args.host, port = cli_args.port);
+    let local_addr = format!("{host}:{port}", host = cli_args.host, port = cli_args.sip_port);
 
     match tokio::net::UdpSocket::bind(&local_addr).await {
         Err(e) => {

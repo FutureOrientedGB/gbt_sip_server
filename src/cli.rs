@@ -6,7 +6,10 @@ pub struct CommandLines {
     pub host: String,
 
     #[structopt(long, default_value = "5060")]
-    pub port: i32,
+    pub sip_port: u16,
+
+    #[structopt(long, default_value = "8080")]
+    pub http_port: u16,
 
     #[structopt(long, default_value = "ce665764")]
     pub user_name: String,
