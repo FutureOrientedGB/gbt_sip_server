@@ -8,7 +8,8 @@ pub struct ReplayStartRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ReplayStopResponse {
+pub struct ReplayStartResponse {
+    pub locate: String,
     pub code: u32,
     pub msg: String,
     pub gb_code: String,

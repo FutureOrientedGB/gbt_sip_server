@@ -5,6 +5,7 @@ use crate::http_message::live::keep_alive::{LiveKeepAliveRequest, LiveKeepAliveR
 #[post("/live/keep_alive")]
 async fn post_keep_alive(data: web::Json<LiveKeepAliveRequest>) -> impl Responder {
     let result = LiveKeepAliveResponse {
+        locate: format!("{}#L{}", file!(), line!()),
         code: 0,
         msg: String::from("OK"),
         gb_code: data.gb_code.clone(),

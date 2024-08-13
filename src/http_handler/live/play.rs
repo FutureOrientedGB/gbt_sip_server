@@ -5,6 +5,7 @@ use crate::http_message::live::play::{LivePlayRequest, LivePlayResponse};
 #[post("/live/play")]
 async fn post_play(data: web::Json<LivePlayRequest>) -> impl Responder {
     let result = LivePlayResponse {
+        locate: format!("{}#L{}", file!(), line!()),
         code: 0,
         msg: String::from("OK"),
         gb_code: data.gb_code.clone(),

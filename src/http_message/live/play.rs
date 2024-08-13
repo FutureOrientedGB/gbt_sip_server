@@ -7,6 +7,7 @@ pub struct LivePlayRequest {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LivePlayResponse {
+    pub locate: String,
     pub code: u32,
     pub msg: String,
     pub gb_code: String,
