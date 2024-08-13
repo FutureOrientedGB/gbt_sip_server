@@ -23,7 +23,7 @@ impl SipRequestHandler {
         headers.push(request.via_header().unwrap().clone().into());
         headers.push(request.from_header().unwrap().clone().into());
         let to = request.to_header().unwrap().typed().unwrap();
-        headers.push(to.with_tag("1410948204".into()).into());
+        headers.push(to.with_tag(self.random_tag(10).into()).into());
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
         headers.push(rsip::Header::ContentLength(Default::default()));
@@ -41,7 +41,7 @@ impl SipRequestHandler {
         );
 
         let response = rsip::Response {
-            status_code: 401.into(),
+            status_code: rsip::StatusCode::Unauthorized,
             headers,
             version: rsip::Version::V2,
             body: Default::default(),
@@ -51,6 +51,23 @@ impl SipRequestHandler {
     }
 
     async fn on_register_200(&self, request: rsip::Request) -> String {
-        return String::new();
+        let mut headers: rsip::Headers = Default::default();
+        headers.push(request.via_header().unwrap().clone().into());
+        headers.push(request.from_header().unwrap().clone().into());
+        let to = request.to_header().unwrap().typed().unwrap();
+        headers.push(to.with_tag(self.random_tag(8).into()).into());
+        headers.push(request.call_id_header().unwrap().clone().into());
+        headers.push(request.cseq_header().unwrap().clone().into());
+        headers.push(rsip::Header::ContentLength(Default::default()));
+        headers.push(rsip::Header::Server(Default::default()));
+
+        let response = rsip::Response {
+            status_code: rsip::StatusCode::OK,
+            headers,
+            version: rsip::Version::V2,
+            body: Default::default(),
+        };
+
+        return response.to_string();
     }
 }

@@ -10,6 +10,8 @@ chrono = { version = "0.4.38" }
 
 encoding_rs = { version = "0.8.34" }
 
+rand = { version = "0.8.5" }
+
 rsip = { version = "0.4.0" }
 
 structopt = { version = "0.3.26" }
