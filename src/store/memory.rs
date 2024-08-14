@@ -50,7 +50,7 @@ impl StoreEngine for MemoryStore {
         return true;
     }
 
-    fn find_device_by_gbcode(&self, key: &String) -> String {
+    fn find_device_by_gb_code(&self, key: &String) -> String {
         if let Some((addr, _ts)) = self.sip_devices.lock().unwrap().get(key) {
             return addr.to_string();
         }
@@ -60,7 +60,7 @@ impl StoreEngine for MemoryStore {
     fn find_device_by_stream_id(&self, key: u64) -> String {
         let gb_code = self.find_gb_code(key);
         if !gb_code.is_empty() {
-            return self.find_device_by_gbcode(&gb_code);
+            return self.find_device_by_gb_code(&gb_code);
         }
         return String::new();
     }
@@ -72,7 +72,7 @@ impl StoreEngine for MemoryStore {
         return String::new();
     }
 
-    fn register(&mut self, gb_code: &String, socket_addr: std::net::SocketAddr) -> bool {
+    fn register(&self, gb_code: &String, socket_addr: std::net::SocketAddr) -> bool {
         let locked_devices = self.sip_devices.lock().unwrap();
         if locked_devices.get(gb_code).is_none() {
             drop(locked_devices);
@@ -91,7 +91,7 @@ impl StoreEngine for MemoryStore {
         return false;
     }
 
-    fn unregister(&mut self, gb_code: &String) -> bool {
+    fn unregister(&self, gb_code: &String) -> bool {
         let locked_device = self.sip_devices.lock().unwrap();
         if locked_device.get(gb_code).is_some() {
             drop(locked_device);
@@ -102,7 +102,7 @@ impl StoreEngine for MemoryStore {
         return false;
     }
 
-    fn register_keep_alive(&mut self, gb_code: &String) -> bool {
+    fn register_keep_alive(&self, gb_code: &String) -> bool {
         let locked_device = self.sip_devices.lock().unwrap();
         if let Some((addr, _ts)) = locked_device.get(gb_code) {
             let address = addr.clone();
@@ -123,7 +123,7 @@ impl StoreEngine for MemoryStore {
     }
 
     fn invite(&self, gb_code: &String, is_live: bool) -> (bool, bool, u64) {
-        if self.find_device_by_gbcode(gb_code).is_empty() {
+        if self.find_device_by_gb_code(gb_code).is_empty() {
             return (false, false, 0);
         }
 

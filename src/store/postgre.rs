@@ -30,7 +30,7 @@ impl StoreEngine for PostgreStore {
         return false;
     }
 
-    fn find_device_by_gbcode(&self, _key: &String) -> String {
+    fn find_device_by_gb_code(&self, _key: &String) -> String {
         return String::new();
     }
 
@@ -42,15 +42,15 @@ impl StoreEngine for PostgreStore {
         return String::new();
     }
 
-    fn register(&mut self, _gb_code: &String, _socket_addr: std::net::SocketAddr) -> bool {
+    fn register(&self, _gb_code: &String, _socket_addr: std::net::SocketAddr) -> bool {
         return false;
     }
 
-    fn unregister(&mut self, _gb_code: &String) -> bool {
+    fn unregister(&self, _gb_code: &String) -> bool {
         return false;
     }
 
-    fn register_keep_alive(&mut self, _gb_code: &String) -> bool {
+    fn register_keep_alive(&self, _gb_code: &String) -> bool {
         return false;
     }
 

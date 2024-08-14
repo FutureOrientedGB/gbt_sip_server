@@ -76,12 +76,13 @@ impl SipRequestHandler {
         client_addr: std::net::SocketAddr,
         request: rsip::Request,
     ) -> rsip::Response {
+        let gb_code = request.from_header().unwrap().uri().unwrap().auth.unwrap().to_string();
         if let Some(exp) = request.expires_header() {
             if let Ok(seconds) = exp.seconds() {
                 if 0 == seconds {
-                    // store_engine.unregister(gb_code);
+                    store_engine.unregister(&gb_code);
                 } else {
-                    // store_engine.register(gb_code, client_addr);
+                    store_engine.register(&gb_code, client_addr);
                 }
             }
         }
