@@ -21,9 +21,9 @@ impl SipRequestHandler {
     }
 
     pub fn extract_tag(&self, request: &rsip::Request) -> String {
-        if let Ok(to) = request.to_header() {
-            if let Ok(tag) = to.tag() {
-                if let Some(tag) = tag {
+        if let Ok(f) = request.from_header() {
+            if let Ok(t) = f.tag() {
+                if let Some(tag) = t {
                     return tag.to_string();
                 }
             }

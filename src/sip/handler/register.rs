@@ -15,13 +15,17 @@ impl SipRequestHandler {
     ) -> rsip::Response {
         if let Some(auth) = request.authorization_header() {
             if let Ok(auth) = auth.typed() {
-                if self.is_authorized(request.method(), &auth.uri, &auth.response) {
-                    return self.on_register_200(store_engine, sip_socket, client_addr, request).await;
+                if self.is_authorized(&auth.username, request.method(), &auth.uri, &auth.response) {
+                    return self
+                        .on_register_200(store_engine, sip_socket, client_addr, request)
+                        .await;
                 }
             }
         }
 
-        return self.on_register_401(store_engine, sip_socket, client_addr, request).await;
+        return self
+            .on_register_401(store_engine, sip_socket, client_addr, request)
+            .await;
     }
 
     async fn on_register_401(
@@ -33,7 +37,13 @@ impl SipRequestHandler {
     ) -> rsip::Response {
         let mut headers: rsip::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
-        headers.push(request.from_header().unwrap().clone().into());
+        let from_uri = format!("sip:{}@{}", &self.id, &self.domain);
+        let from = request.from_header().unwrap().typed().unwrap();
+        headers.push(
+            from.with_uri(rsip::Uri::try_from(from_uri).unwrap())
+                .with_tag(self.extract_tag(&request).into())
+                .into(),
+        );
         let to = request.to_header().unwrap().typed().unwrap();
         headers.push(to.with_tag(self.random_tag(10).into()).into());
         headers.push(request.call_id_header().unwrap().clone().into());
@@ -66,8 +76,6 @@ impl SipRequestHandler {
         client_addr: std::net::SocketAddr,
         request: rsip::Request,
     ) -> rsip::Response {
-        
-
         if let Some(exp) = request.expires_header() {
             if let Ok(seconds) = exp.seconds() {
                 if 0 == seconds {
@@ -80,7 +88,13 @@ impl SipRequestHandler {
 
         let mut headers: rsip::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
-        headers.push(request.from_header().unwrap().clone().into());
+        let from_uri = format!("sip:{}@{}", &self.id, &self.domain);
+        let from = request.from_header().unwrap().typed().unwrap();
+        headers.push(
+            from.with_uri(rsip::Uri::try_from(from_uri).unwrap())
+                .with_tag(self.extract_tag(&request).into())
+                .into(),
+        );
         let to = request.to_header().unwrap().typed().unwrap();
         headers.push(to.with_tag(self.random_tag(8).into()).into());
         headers.push(request.call_id_header().unwrap().clone().into());

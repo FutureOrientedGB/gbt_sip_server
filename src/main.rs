@@ -3,20 +3,19 @@ pub mod sip;
 pub mod store;
 pub mod utils;
 
-const APP_NAME: &str = "gbt_sip_server";
-const APP_VERSION: &str = "2024.8.14.1";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // parse command line arguments
-    let cli_args = utils::cli::CommandLines::new(&APP_NAME, &APP_VERSION);
+    let app_name: &str = "gbt_sip_server";
+    let app_version = "8320cd2.20240814.221605";
+    let cli_args = utils::cli::CommandLines::new(&app_name, &app_version);
 
     // open daily log
-    utils::log::open_daily_file_log(&APP_NAME, cli_args.sip_port);
+    utils::log::open_daily_file_log(&app_name, cli_args.sip_port, app_version);
 
     // prepare sip server
-    let mut sip_server = sip::server::SipServer::default();
-    let sip_socket = sip_server.bind(&cli_args).await?;
+    let sip_socket = sip::server::bind(&cli_args).await?;
     let sip_socket_arc = std::sync::Arc::new(sip_socket);
 
     // connect store
@@ -28,7 +27,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // run sip server
-    let sip_service = sip_server.run_forever(&cli_args, sip_socket_arc.clone(), store_engine_arc.clone());
+    let sip_service = sip::server::run_forever(&cli_args, sip_socket_arc.clone(), store_engine_arc.clone());
 
     // run http server
     let http_service = http::server::run_forever(&cli_args, sip_socket_arc.clone(), store_engine_arc.clone());

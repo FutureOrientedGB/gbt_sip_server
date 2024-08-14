@@ -5,7 +5,7 @@ use time;
 use tracing_appender;
 use tracing_subscriber;
 
-pub fn open_daily_file_log(name: &str, port: u16) {
+pub fn open_daily_file_log(name: &str, port: u16, app_version: &str) {
     let mut log_dir = std::env::current_exe()
         .unwrap()
         .parent()
@@ -28,7 +28,7 @@ pub fn open_daily_file_log(name: &str, port: u16) {
         ))
         .with_line_number(true)
         .with_thread_ids(true)
-        .with_ansi(false)
+        // .with_ansi(false)
         .init();
 
     log_dir.push(format!(
@@ -36,4 +36,21 @@ pub fn open_daily_file_log(name: &str, port: u16) {
         chrono::Local::now().format("%Y-%m-%d")
     ));
     println!("logging to: {:?}", log_dir);
+
+    tracing::info!(
+        "app version: {}{}",
+        app_version,
+        r#"
+
+    ▄██████▄  ▀█████████▄      ███             ▄████████  ▄█     ▄███████▄         ▄████████    ▄████████    ▄████████  ▄█    █▄     ▄████████    ▄████████ 
+    ███    ███   ███    ███ ▀█████████▄        ███    ███ ███    ███    ███        ███    ███   ███    ███   ███    ███ ███    ███   ███    ███   ███    ███ 
+    ███    █▀    ███    ███    ▀███▀▀██        ███    █▀  ███▌   ███    ███        ███    █▀    ███    █▀    ███    ███ ███    ███   ███    █▀    ███    ███ 
+   ▄███         ▄███▄▄▄██▀      ███   ▀        ███        ███▌   ███    ███        ███         ▄███▄▄▄      ▄███▄▄▄▄██▀ ███    ███  ▄███▄▄▄      ▄███▄▄▄▄██▀ 
+  ▀▀███ ████▄  ▀▀███▀▀▀██▄      ███          ▀███████████ ███▌ ▀█████████▀       ▀███████████ ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   ███    ███ ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   
+    ███    ███   ███    ██▄     ███                   ███ ███    ███                      ███   ███    █▄  ▀███████████ ███    ███   ███    █▄  ▀███████████ 
+    ███    ███   ███    ███     ███             ▄█    ███ ███    ███                ▄█    ███   ███    ███   ███    ███ ███    ███   ███    ███   ███    ███ 
+    ████████▀  ▄█████████▀     ▄████▀         ▄████████▀  █▀    ▄████▀            ▄████████▀    ██████████   ███    ███  ▀██████▀    ██████████   ███    ███ 
+                                                                                                             ███    ███                           ███    ███ 
+        "#
+    );
 }

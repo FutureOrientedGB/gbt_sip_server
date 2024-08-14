@@ -3,9 +3,9 @@ use rsip;
 use crate::sip::handler::base::SipRequestHandler;
 
 impl SipRequestHandler {
-    pub fn is_authorized(&self, method: &rsip::Method, uri: &rsip::Uri, digest: &String) -> bool {
+    pub fn is_authorized(&self, user_name: &String, method: &rsip::Method, uri: &rsip::Uri, digest: &String) -> bool {
         let generator = rsip::services::DigestGenerator {
-            username: &self.user_name,
+            username: user_name,
             password: &self.password,
             algorithm: self.algorithm,
             nonce: &self.nonce,

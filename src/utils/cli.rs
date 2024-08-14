@@ -17,8 +17,11 @@ pub struct CommandLines {
     #[structopt(long, default_value = "8080")]
     pub http_port: u16,
 
-    #[structopt(long, default_value = "ce665764")]
-    pub sip_user_name: String,
+    #[structopt(long, default_value = "3402000000")]
+    pub sip_domain: String,
+
+    #[structopt(long, default_value = "34020000002000000001")]
+    pub sip_id: String,
 
     #[structopt(long, default_value = "d383cf85b0e8ce0b")]
     pub sip_password: String,
@@ -28,9 +31,6 @@ pub struct CommandLines {
 
     #[structopt(long, default_value = "f89d0eaccaf1c90453e2f84688ec800f05")]
     pub sip_nonce: String,
-
-    #[structopt(long, default_value = "edf7270a")]
-    pub sip_cnonce: String,
 
     #[structopt(long, default_value = "gbt@future_oriented.com")]
     pub sip_realm: String,
