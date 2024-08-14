@@ -42,7 +42,7 @@ impl StoreEngine for NotImplStore {
         return String::new();
     }
 
-    fn register(&mut self, _gb_code: &String, _socket_addr: &String) -> bool {
+    fn register(&mut self, _gb_code: &String, _socket_addr: std::net::SocketAddr) -> bool {
         return false;
     }
 
@@ -54,8 +54,8 @@ impl StoreEngine for NotImplStore {
         return false;
     }
 
-    fn invite(&self, _gb_code: &String, _is_live: bool) -> (bool, u64) {
-        return (false, 0);
+    fn invite(&self, _gb_code: &String, _is_live: bool) -> (bool, bool, u64) {
+        return (false, false, 0);
     }
 
     fn bye(&self, _gb_code: &String, _stream_id: u64) -> bool {

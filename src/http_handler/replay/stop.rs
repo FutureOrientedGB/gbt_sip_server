@@ -1,9 +1,16 @@
 use actix_web::{post, web, Responder};
 
-use crate::{http_message::replay::stop::{ReplayStopRequest, ReplayStopResponse}, store::base::StoreEngine};
+use crate::{
+    http_message::replay::stop::{ReplayStopRequest, ReplayStopResponse},
+    store::base::StoreEngine,
+};
 
 #[post("/replay/stop")]
-async fn post_stop(data: web::Json<ReplayStopRequest>, store_engine: web::Data<std::sync::Arc<Box<dyn StoreEngine>>>) -> impl Responder {
+async fn post_stop(
+    data: web::Json<ReplayStopRequest>,
+    _sip_socket: web::Data<std::sync::Arc<tokio::net::UdpSocket>>,
+    store_engine: web::Data<std::sync::Arc<Box<dyn StoreEngine>>>,
+) -> impl Responder {
     store_engine.bye(&data.gb_code, data.stream_id);
 
     let result = ReplayStopResponse {

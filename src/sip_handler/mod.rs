@@ -41,24 +41,31 @@ impl SipRequestHandler {
                     "UdpSocket::recv_from({}) ok, amount: {:?}, data: \n{}",
                     client_addr,
                     request_data.len(),
-                    request.headers().to_string() + &self.decode_body(&request)
+                    format!(
+                        "{} {} {}\n{}{}",
+                        request.method().to_string(),
+                        request.version().to_string(),
+                        request.uri().to_string(),
+                        request.headers().to_string(),
+                        self.decode_body(&request)
+                    )
                 );
 
                 let response = match request.method() {
-                    rsip::Method::Register => self.on_register(store_engine, request).await,
-                    rsip::Method::Ack => self.on_ack(store_engine, request).await,
-                    rsip::Method::Bye => self.on_bye(store_engine, request).await,
-                    rsip::Method::Cancel => self.on_cancel(store_engine, request).await,
-                    rsip::Method::Info => self.on_info(store_engine, request).await,
-                    rsip::Method::Invite => self.on_invite(store_engine, request).await,
-                    rsip::Method::Message => self.on_message(store_engine, request).await,
-                    rsip::Method::Notify => self.on_notify(store_engine, request).await,
-                    rsip::Method::Options => self.on_options(store_engine, request).await,
-                    rsip::Method::PRack => self.on_prack(store_engine, request).await,
-                    rsip::Method::Publish => self.on_publish(store_engine, request).await,
-                    rsip::Method::Refer => self.on_refer(store_engine, request).await,
-                    rsip::Method::Subscribe => self.on_subscribe(store_engine, request).await,
-                    rsip::Method::Update => self.on_update(store_engine, request).await,
+                    rsip::Method::Register => self.on_register(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Ack => self.on_ack(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Bye => self.on_bye(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Cancel => self.on_cancel(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Info => self.on_info(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Invite => self.on_invite(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Message => self.on_message(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Notify => self.on_notify(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Options => self.on_options(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::PRack => self.on_prack(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Publish => self.on_publish(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Refer => self.on_refer(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Subscribe => self.on_subscribe(store_engine, sip_socket.clone(), client_addr, request).await,
+                    rsip::Method::Update => self.on_update(store_engine, sip_socket.clone(), client_addr, request).await,
                 };
 
                 let mut response_data: Vec<u8> = vec![];

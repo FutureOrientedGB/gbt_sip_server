@@ -36,7 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sip_service = sip_server.run_forever(&cli_args, sip_socket_arc.clone(), store_engine_arc.clone());
 
     // run http server
-    let http_service = http_server::run_forever(&cli_args, store_engine_arc.clone());
+    let http_service = http_server::run_forever(&cli_args, sip_socket_arc.clone(), store_engine_arc.clone());
 
     // wait
     let _ = tokio::join!(sip_service, http_service);

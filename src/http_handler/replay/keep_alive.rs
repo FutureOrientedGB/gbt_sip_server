@@ -1,9 +1,16 @@
 use actix_web::{post, web, Responder};
 
-use crate::{http_message::replay::keep_alive::{ReplayKeepAliveRequest, ReplayKeepAliveResponse}, store::base::StoreEngine};
+use crate::{
+    http_message::replay::keep_alive::{ReplayKeepAliveRequest, ReplayKeepAliveResponse},
+    store::base::StoreEngine,
+};
 
 #[post("/replay/keep_alive")]
-async fn post_keep_alive(data: web::Json<ReplayKeepAliveRequest>, store_engine: web::Data<std::sync::Arc<Box<dyn StoreEngine>>>) -> impl Responder {
+async fn post_keep_alive(
+    data: web::Json<ReplayKeepAliveRequest>,
+    _sip_socket: web::Data<std::sync::Arc<tokio::net::UdpSocket>>,
+    store_engine: web::Data<std::sync::Arc<Box<dyn StoreEngine>>>,
+) -> impl Responder {
     store_engine.stream_keep_alive(&data.gb_code, data.stream_id);
 
     let result = ReplayKeepAliveResponse {

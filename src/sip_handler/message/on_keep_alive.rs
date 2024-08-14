@@ -3,10 +3,19 @@ use rsip::{
     prelude::{HeadersExt, ToTypedHeader},
 };
 
-use crate::{sip_handler::base::SipRequestHandler, sip_message::KeepAlive, store::base::StoreEngine};
+use crate::{
+    sip_handler::base::SipRequestHandler, sip_message::KeepAlive, store::base::StoreEngine,
+};
 
 impl SipRequestHandler {
-    pub async fn on_keep_alive(&mut self, _store_engine: std::sync::Arc<Box<dyn StoreEngine>>, request: rsip::Request, msg: String) -> rsip::Response {
+    pub async fn on_keep_alive(
+        &mut self,
+        _store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
+        _sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
+        _client_addr: std::net::SocketAddr,
+        request: rsip::Request,
+        msg: String,
+    ) -> rsip::Response {
         let _data = KeepAlive::deserialize_from_xml(msg);
 
         // _store_engine.register_keep_alive

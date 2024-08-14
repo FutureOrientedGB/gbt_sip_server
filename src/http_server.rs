@@ -8,10 +8,12 @@ use crate::store::base::StoreEngine;
 
 pub async fn run_forever(
     cli_args: &CommandLines,
+    sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
     store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
 ) -> Result<(), std::io::Error> {
     match HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(sip_socket.clone()))
             .app_data(web::Data::new(store_engine.clone()))
             .service(http_handler::live::post_play)
             .service(http_handler::live::post_stop)
