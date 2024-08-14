@@ -16,12 +16,12 @@ pub struct SipRequestHandler {
 impl SipRequestHandler {
     pub fn new(cli_args: &CommandLines) -> Self {
         SipRequestHandler {
-            user_name: cli_args.user_name.clone(),
-            password: cli_args.password.clone(),
-            algorithm: rsip::headers::auth::Algorithm::from_str(&cli_args.algorithm).unwrap(),
-            nonce: cli_args.nonce.clone(),
-            cnonce: cli_args.cnonce.clone(),
-            realm: cli_args.realm.clone(),
+            user_name: cli_args.sip_user_name.clone(),
+            password: cli_args.sip_password.clone(),
+            algorithm: rsip::headers::auth::Algorithm::from_str(&cli_args.sip_algorithm).unwrap(),
+            nonce: cli_args.sip_nonce.clone(),
+            cnonce: cli_args.sip_cnonce.clone(),
+            realm: cli_args.sip_realm.clone(),
         }
     }
 }

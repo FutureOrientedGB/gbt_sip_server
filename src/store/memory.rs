@@ -1,7 +1,8 @@
 use tokio;
 use uuid::Uuid;
 
-use crate::sip_device::base::StoreOperation;
+use crate::cli::CommandLines;
+use crate::store::base::StoreEngine;
 
 pub struct MemoryStore {
     pub quit_flag: bool,
@@ -14,7 +15,10 @@ pub struct MemoryStore {
 }
 
 impl MemoryStore {
-    pub fn new(sip_socket: std::sync::Arc<tokio::net::UdpSocket>) -> Self {
+    pub fn new(
+        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
+        _cli_args: &CommandLines,
+    ) -> Self {
         MemoryStore {
             quit_flag: true,
             task_handle: None,
@@ -32,7 +36,11 @@ impl MemoryStore {
     }
 }
 
-impl StoreOperation for MemoryStore {
+impl StoreEngine for MemoryStore {
+    fn is_connected(&self) -> bool {
+        return true;
+    }
+
     fn find_device_by_gbcode(&self, key: &String) -> String {
         if let Some((addr, _ts)) = self.sip_devices.lock().unwrap().get(key) {
             return addr.to_string();
@@ -150,7 +158,10 @@ impl StoreOperation for MemoryStore {
         return false;
     }
 
-    fn start_timeout_check(&mut self, timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u64)>>) {
+    fn start_timeout_check(
+        &mut self,
+        timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u64)>>,
+    ) {
         self.quit_flag = false;
 
         let quit_flag = std::sync::Arc::new(self.quit_flag);
@@ -191,3 +202,7 @@ impl StoreOperation for MemoryStore {
         self.quit_flag = true;
     }
 }
+
+unsafe impl Send for MemoryStore {}
+
+unsafe impl Sync for MemoryStore {}

@@ -3,22 +3,22 @@ use rsip::{
     prelude::{HeadersExt, ToTypedHeader},
 };
 
-use crate::sip_handler::base::SipRequestHandler;
+use crate::{sip_handler::base::SipRequestHandler, store::base::StoreEngine};
 
 impl SipRequestHandler {
-    pub async fn on_register(&mut self, request: rsip::Request) -> rsip::Response {
+    pub async fn on_register(&mut self, store_engine: std::sync::Arc<Box<dyn StoreEngine>>, request: rsip::Request) -> rsip::Response {
         if let Some(auth) = request.authorization_header() {
             if let Ok(auth) = auth.typed() {
                 if self.is_authorized(request.method(), &auth.uri, &auth.response) {
-                    return self.on_register_200(request).await;
+                    return self.on_register_200(store_engine, request).await;
                 }
             }
         }
 
-        return self.on_register_401(request).await;
+        return self.on_register_401(store_engine, request).await;
     }
 
-    async fn on_register_401(&self, request: rsip::Request) -> rsip::Response {
+    async fn on_register_401(&self, _store_engine: std::sync::Arc<Box<dyn StoreEngine>>, request: rsip::Request) -> rsip::Response {
         let mut headers: rsip::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
         headers.push(request.from_header().unwrap().clone().into());
@@ -47,7 +47,7 @@ impl SipRequestHandler {
         }
     }
 
-    async fn on_register_200(&self, request: rsip::Request) -> rsip::Response {
+    async fn on_register_200(&self, _store_engine: std::sync::Arc<Box<dyn StoreEngine>>, request: rsip::Request) -> rsip::Response {
         let mut headers: rsip::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
         headers.push(request.from_header().unwrap().clone().into());

@@ -1,9 +1,9 @@
 use actix_web::{post, web, Responder};
 
-use crate::http_message::replay::keep_alive::{ReplayKeepAliveRequest, ReplayKeepAliveResponse};
+use crate::{http_message::replay::keep_alive::{ReplayKeepAliveRequest, ReplayKeepAliveResponse}, store::base::StoreEngine};
 
 #[post("/replay/keep_alive")]
-async fn post_keep_alive(data: web::Json<ReplayKeepAliveRequest>) -> impl Responder {
+async fn post_keep_alive(data: web::Json<ReplayKeepAliveRequest>, _store_engine: web::Data<std::sync::Arc<Box<dyn StoreEngine>>>) -> impl Responder {
     let result = ReplayKeepAliveResponse {
         locate: format!("{}#L{}", file!(), line!()),
         code: 0,

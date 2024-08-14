@@ -3,11 +3,12 @@ use regex::Regex;
 use rsip;
 
 use crate::sip_handler::base::SipRequestHandler;
+use crate::store::base::StoreEngine;
 
 pub mod on_keep_alive;
 
 impl SipRequestHandler {
-    pub async fn on_message(&mut self, request: rsip::Request) -> rsip::Response {
+    pub async fn on_message(&mut self, store_engine: std::sync::Arc<Box<dyn StoreEngine>>, request: rsip::Request) -> rsip::Response {
         // decode body
         let msg = self.decode_body(&request);
 
@@ -15,7 +16,7 @@ impl SipRequestHandler {
         let cmd_type = self.extract_cmd_type(&msg);
         match cmd_type.as_str() {
             "Keepalive" => {
-                return self.on_keep_alive(request, msg).await;
+                return self.on_keep_alive(store_engine, request, msg).await;
             }
             _ => {
                 return rsip::Response::default();

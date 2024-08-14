@@ -1,9 +1,9 @@
 use actix_web::{post, web, Responder};
 
-use crate::http_message::live::stop::{LiveStopRequest, LiveStopResponse};
+use crate::{http_message::live::stop::{LiveStopRequest, LiveStopResponse}, store::base::StoreEngine};
 
 #[post("/live/stop")]
-async fn post_stop(data: web::Json<LiveStopRequest>) -> impl Responder {
+async fn post_stop(data: web::Json<LiveStopRequest>, _store_engine: web::Data<std::sync::Arc<Box<dyn StoreEngine>>>) -> impl Responder {
     let result = LiveStopResponse {
         locate: format!("{}#L{}", file!(), line!()),
         code: 0,

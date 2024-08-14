@@ -1,8 +1,14 @@
 use structopt::StructOpt;
 
-#[derive(StructOpt)]
+#[derive(Clone, StructOpt)]
 pub struct CommandLines {
-    #[structopt(long, default_value = "0.0.0.0")]
+    #[structopt(long, default_value = "memory", value_names = &["memory", "postgre", "redis"])]
+    pub store_engine: String,
+
+    #[structopt(long, default_value = "", help = "connect url for store_engine, like redis://user:pass@host:port/db or postgresql://user:pass@host:port/db")]
+    pub store_url: String,
+
+    #[structopt(long, default_value = "0.0.0.0", value_names = &["127.0.0.1", "localhost", "0.0.0.0"])]
     pub host: String,
 
     #[structopt(long, default_value = "5060")]
@@ -12,22 +18,22 @@ pub struct CommandLines {
     pub http_port: u16,
 
     #[structopt(long, default_value = "ce665764")]
-    pub user_name: String,
+    pub sip_user_name: String,
 
     #[structopt(long, default_value = "d383cf85b0e8ce0b")]
-    pub password: String,
+    pub sip_password: String,
 
     #[structopt(long, default_value = "md5")]
-    pub algorithm: String,
+    pub sip_algorithm: String,
 
     #[structopt(long, default_value = "f89d0eaccaf1c90453e2f84688ec800f05")]
-    pub nonce: String,
+    pub sip_nonce: String,
 
     #[structopt(long, default_value = "edf7270a")]
-    pub cnonce: String,
+    pub sip_cnonce: String,
 
     #[structopt(long, default_value = "gbt@future_oriented.com")]
-    pub realm: String,
+    pub sip_realm: String,
 }
 
 impl CommandLines {
