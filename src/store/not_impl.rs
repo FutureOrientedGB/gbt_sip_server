@@ -1,7 +1,7 @@
 use tokio;
 use uuid::Uuid;
 
-use crate::cli::CommandLines;
+use crate::utils::cli::CommandLines;
 use crate::store::base::StoreEngine;
 
 pub struct NotImplStore {

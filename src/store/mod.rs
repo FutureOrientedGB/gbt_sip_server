@@ -4,10 +4,10 @@ pub mod not_impl;
 pub mod postgre;
 pub mod redis;
 
-use crate::cli;
+use crate::utils::cli::CommandLines;
 
 pub fn create_store(
-    cli_args: &cli::CommandLines,
+    cli_args: &CommandLines,
     sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
 ) -> Box<dyn base::StoreEngine> {
     match cli_args.store_engine.as_str() {
