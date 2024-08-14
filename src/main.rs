@@ -2,17 +2,17 @@ pub mod http;
 pub mod sip;
 pub mod store;
 pub mod utils;
+pub mod version;
 
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // parse command line arguments
     let app_name: &str = "gbt_sip_server";
-    let app_version = "dc14906.20240814.233556";
-    let cli_args = utils::cli::CommandLines::new(&app_name, &app_version);
+    let cli_args = utils::cli::CommandLines::new(&app_name, &version::APP_VERSION);
 
     // open daily log
-    utils::log::open_daily_file_log(&app_name, cli_args.sip_port, app_version);
+    utils::log::open_daily_file_log(&app_name, cli_args.sip_port, &version::APP_VERSION);
 
     // prepare sip server
     let sip_socket = sip::server::bind(&cli_args).await?;
