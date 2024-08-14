@@ -3,6 +3,8 @@ name = "gbt_sip_server"
 version = "0.1.0"
 edition = "2021"
 
+
+
 [dependencies]
 actix-web = { version = "4.9.0" }
 
@@ -33,4 +35,11 @@ tracing-subscriber = { version = "0.3.18 ", features = ["env-filter", "time", "l
 tokio = { version = "1.39.2", features = ["full"] }
 
 uuid = { version = "1.10.0", features = ["v4", "zerocopy"] }
+
+
+
+[build-dependencies]
+regex = { version = "1.10.6" }
+walkdir = { version = "2.5.0" }
+
 

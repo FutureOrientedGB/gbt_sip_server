@@ -8,7 +8,7 @@ pub mod utils;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // parse command line arguments
     let app_name: &str = "gbt_sip_server";
-    let app_version = "8320cd2.20240814.221605";
+    let app_version = "6ce6093.20240814.233429";
     let cli_args = utils::cli::CommandLines::new(&app_name, &app_version);
 
     // open daily log
