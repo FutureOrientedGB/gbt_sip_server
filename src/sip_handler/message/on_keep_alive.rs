@@ -9,6 +9,8 @@ impl SipRequestHandler {
     pub async fn on_keep_alive(&mut self, _store_engine: std::sync::Arc<Box<dyn StoreEngine>>, request: rsip::Request, msg: String) -> rsip::Response {
         let _data = KeepAlive::deserialize_from_xml(msg);
 
+        // _store_engine.register_keep_alive
+
         let mut headers: rsip::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
         headers.push(request.from_header().unwrap().clone().into());

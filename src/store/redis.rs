@@ -12,7 +12,10 @@ pub struct RedisStore {
 }
 
 impl RedisStore {
-    pub fn new(sip_socket: std::sync::Arc<tokio::net::UdpSocket>, _cli_args: &CommandLines) -> Self {
+    pub fn new(
+        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
+        _cli_args: &CommandLines,
+    ) -> Self {
         RedisStore {
             quit_flag: true,
             task_handle: None,
@@ -51,19 +54,23 @@ impl StoreEngine for RedisStore {
         return false;
     }
 
-    fn invite(&mut self, _gb_code: &String, _stream_id: u64) -> bool {
+    fn invite(&self, _gb_code: &String, _is_live: bool) -> (bool, u64) {
+        return (false, 0);
+    }
+
+    fn bye(&self, _gb_code: &String, _stream_id: u64) -> bool {
         return false;
     }
 
-    fn bye(&mut self, _gb_code: &String, _stream_id: u64) -> bool {
+    fn stream_keep_alive(&self, _gb_code: &String, _stream_id: u64) -> bool {
         return false;
     }
 
-    fn stream_keep_alive(&mut self, _gb_code: &String, _stream_id: u64) -> bool {
-        return false;
-    }
-
-    fn start_timeout_check(&mut self, _timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u64)>>) {
+    fn start_timeout_check(
+        &mut self,
+        _timeout_devices_sender: std::sync::mpsc::Sender<Option<String>>,
+        _timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u64)>>,
+    ) {
         self.quit_flag = false;
 
         let quit_flag = std::sync::Arc::new(self.quit_flag);

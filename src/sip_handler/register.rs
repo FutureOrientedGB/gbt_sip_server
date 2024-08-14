@@ -48,6 +48,8 @@ impl SipRequestHandler {
     }
 
     async fn on_register_200(&self, _store_engine: std::sync::Arc<Box<dyn StoreEngine>>, request: rsip::Request) -> rsip::Response {
+        // store_engine.register
+
         let mut headers: rsip::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
         headers.push(request.from_header().unwrap().clone().into());

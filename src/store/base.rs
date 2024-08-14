@@ -9,10 +9,14 @@ pub trait StoreEngine: Send + Sync {
     fn unregister(&mut self, gb_code: &String) -> bool;
     fn register_keep_alive(&mut self, gb_code: &String) -> bool;
 
-    fn invite(&mut self, gb_code: &String, stream_id: u64) -> bool;
-    fn bye(&mut self, gb_code: &String, stream_id: u64) -> bool;
-    fn stream_keep_alive(&mut self, gb_code: &String, stream_id: u64) -> bool;
+    fn invite(&self, gb_code: &String, is_live: bool) -> (bool, u64);
+    fn bye(&self, gb_code: &String, stream_id: u64) -> bool;
+    fn stream_keep_alive(&self, gb_code: &String, stream_id: u64) -> bool;
 
-    fn start_timeout_check(&mut self, timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u64)>>);
+    fn start_timeout_check(
+        &mut self,
+        timeout_devices_sender: std::sync::mpsc::Sender<Option<String>>,
+        timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u64)>>,
+    );
     fn stop_timeout_check(&mut self);
 }

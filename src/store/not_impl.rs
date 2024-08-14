@@ -54,20 +54,21 @@ impl StoreEngine for NotImplStore {
         return false;
     }
 
-    fn invite(&mut self, _gb_code: &String, _stream_id: u64) -> bool {
+    fn invite(&self, _gb_code: &String, _is_live: bool) -> (bool, u64) {
+        return (false, 0);
+    }
+
+    fn bye(&self, _gb_code: &String, _stream_id: u64) -> bool {
         return false;
     }
 
-    fn bye(&mut self, _gb_code: &String, _stream_id: u64) -> bool {
-        return false;
-    }
-
-    fn stream_keep_alive(&mut self, _gb_code: &String, _stream_id: u64) -> bool {
+    fn stream_keep_alive(&self, _gb_code: &String, _stream_id: u64) -> bool {
         return false;
     }
 
     fn start_timeout_check(
         &mut self,
+        _timeout_devices_sender: std::sync::mpsc::Sender<Option<String>>,
         _timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u64)>>,
     ) {
         self.quit_flag = false;

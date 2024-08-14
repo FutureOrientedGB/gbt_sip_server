@@ -2,13 +2,13 @@ use structopt::StructOpt;
 
 #[derive(Clone, StructOpt)]
 pub struct CommandLines {
-    #[structopt(long, default_value = "memory", value_names = &["memory", "postgre", "redis"])]
+    #[structopt(long, default_value = "memory", help = "memory, postgre or redis")]
     pub store_engine: String,
 
     #[structopt(long, default_value = "", help = "connect url for store_engine, like redis://user:pass@host:port/db or postgresql://user:pass@host:port/db")]
     pub store_url: String,
 
-    #[structopt(long, default_value = "0.0.0.0", value_names = &["127.0.0.1", "localhost", "0.0.0.0"])]
+    #[structopt(long, default_value = "0.0.0.0")]
     pub host: String,
 
     #[structopt(long, default_value = "5060")]
