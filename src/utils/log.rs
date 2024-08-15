@@ -37,7 +37,7 @@ pub fn open_daily_file_log(name: &str, port: u16, app_version: &str) {
         "{name}.{port}.log.{}",
         chrono::Local::now().format("%Y-%m-%d")
     ));
-    println!("{}logging to: {:?}{}", Color::GREEN, log_dir, Color::RESET);
+    println!("{}logging to: {}{}", Color::PURPLE, log_dir.to_str().unwrap(), Color::RESET);
 
     tracing::info!(
         "{}app version: {}{}{}",

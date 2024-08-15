@@ -1,11 +1,12 @@
+pub mod on_device_status;
+pub mod on_keep_alive;
+
 use regex::Regex;
 
 use rsip;
 
 use crate::sip::handler::base::SipRequestHandler;
 use crate::store::base::StoreEngine;
-
-pub mod on_keep_alive;
 
 impl SipRequestHandler {
     pub async fn on_message(
@@ -14,19 +15,22 @@ impl SipRequestHandler {
         sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
         client_addr: std::net::SocketAddr,
         request: rsip::Request,
-    ) -> rsip::Response {
+    ) {
         // decode body
-        let msg = self.decode_body(&request);
+        let msg = Self::decode_body(&request);
 
         // dispatch
         let cmd_type = self.extract_cmd_type(&msg);
         match cmd_type.as_str() {
             "Keepalive" => {
-                return self.on_keep_alive(store_engine, sip_socket, client_addr, request, msg).await;
+                self.on_keep_alive(store_engine, sip_socket, client_addr, request, msg)
+                    .await;
             }
-            _ => {
-                return rsip::Response::default();
+            "DeviceStatus" => {
+                self.on_device_status(store_engine, sip_socket, client_addr, request, msg)
+                    .await;
             }
+            _ => {}
         }
     }
 

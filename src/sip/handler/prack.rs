@@ -9,7 +9,7 @@ impl SipRequestHandler {
         _sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
         _client_addr: std::net::SocketAddr,
         _request: rsip::Request,
-    ) -> rsip::Response {
-        return rsip::Response::default();
+    ) {
+        
     }
 }

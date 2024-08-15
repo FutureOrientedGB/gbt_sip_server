@@ -3,7 +3,7 @@ use serde_xml_rs::{from_str, to_string};
 
 use tracing;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct KeepAlive {
     #[serde(rename = "CmdType")]
     cmd_type: String,
@@ -13,17 +13,6 @@ pub struct KeepAlive {
     device_id: String,
     #[serde(rename = "Status")]
     status: String,
-}
-
-impl Default for KeepAlive {
-    fn default() -> Self {
-        KeepAlive {
-            cmd_type: String::new(),
-            sn: 0,
-            device_id: String::new(),
-            status: String::new(),
-        }
-    }
 }
 
 impl KeepAlive {

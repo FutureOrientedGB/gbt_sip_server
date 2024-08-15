@@ -1,4 +1,5 @@
 use structopt::StructOpt;
+use crate::version;
 
 #[derive(Clone, StructOpt)]
 pub struct CommandLines {
@@ -8,8 +9,14 @@ pub struct CommandLines {
     #[structopt(long, default_value = "", help = "connect url for store_engine, like redis://user:pass@host:port/db or postgresql://user:pass@host:port/db")]
     pub store_url: String,
 
+    #[structopt(long, default_value = version::APP_NAME)]
+    pub user_agent: String,
+
     #[structopt(long, default_value = "0.0.0.0")]
     pub host: String,
+
+    #[structopt(long)]
+    pub sip_ip: String,
 
     #[structopt(long, default_value = "5060")]
     pub sip_port: u16,
@@ -34,11 +41,14 @@ pub struct CommandLines {
 
     #[structopt(long, default_value = "gbt@future_oriented.com")]
     pub sip_realm: String,
+
+    #[structopt(long, default_value = "D9E9732AA7CA7246")]
+    pub call_id: String,
 }
 
 impl CommandLines {
-    pub fn new(name: &str, version: &str) -> CommandLines {
-        let cli_app = CommandLines::clap().name(name).version(version);
+    pub fn new() -> CommandLines {
+        let cli_app = CommandLines::clap().name(version::APP_NAME).version(version::APP_VERSION);
         CommandLines::from_clap(&cli_app.get_matches())
     }
 }

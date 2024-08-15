@@ -1,29 +1,19 @@
 use rsip::{self, prelude::HeadersExt};
 
 use crate::{
-    sip::handler::base::SipRequestHandler, sip::message::KeepAlive, store::base::StoreEngine,
+    sip::handler::base::SipRequestHandler, sip::message::DeviceStatus, store::base::StoreEngine,
 };
 
 impl SipRequestHandler {
-    pub async fn on_keep_alive(
+    pub async fn on_device_status(
         &mut self,
-        store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
+        _store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
         _sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
         _client_addr: std::net::SocketAddr,
         request: rsip::Request,
         msg: String,
     ) {
-        let _data = KeepAlive::deserialize_from_xml(msg);
-
-        let gb_code = request
-            .from_header()
-            .unwrap()
-            .uri()
-            .unwrap()
-            .auth
-            .unwrap()
-            .to_string();
-        store_engine.register_keep_alive(&gb_code);
+        let _data = DeviceStatus::deserialize_from_xml(msg);
 
         let mut headers: rsip::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());

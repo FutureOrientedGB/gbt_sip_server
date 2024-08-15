@@ -8,11 +8,10 @@ pub mod version;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // parse command line arguments
-    let app_name: &str = "gbt_sip_server";
-    let cli_args = utils::cli::CommandLines::new(&app_name, &version::APP_VERSION);
+    let cli_args = utils::cli::CommandLines::new();
 
     // open daily log
-    utils::log::open_daily_file_log(&app_name, cli_args.sip_port, &version::APP_VERSION);
+    utils::log::open_daily_file_log(&version::APP_NAME, cli_args.sip_port, &version::APP_VERSION);
 
     // prepare sip server
     let sip_socket = sip::server::bind(&cli_args).await?;

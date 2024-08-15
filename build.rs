@@ -28,7 +28,9 @@ fn replace_version_in_rs(update_all_files: bool) {
     } else {
         let file = String::from("./src/version.rs");
         if !std::path::Path::new(&file).exists() {
-            let mut text = version_replacement.clone();
+            let mut text = String::from(r#"pub static APP_NAME: &str = "gbt_sip_server";"#);
+            text += "\n";
+            text += &version_replacement.to_string();
             text += "\n";
             fs::write(&file, text).expect("fs::write error");
         }

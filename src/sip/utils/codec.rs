@@ -1,34 +1,35 @@
-use rand::Rng;
+use encoding_rs;
 
-use rsip::{self, prelude::HeadersExt};
+use rsip;
+
+use tracing;
 
 use crate::sip::handler::base::SipRequestHandler;
 
-static CHARSET: [char; 16] = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
-];
-
 impl SipRequestHandler {
-    pub fn random_tag(&self, length: usize) -> String {
-        let mut rng = rand::thread_rng();
-        std::iter::repeat(())
-            .take(length)
-            .map(|_| {
-                let index = rng.gen_range(0..CHARSET.len());
-                CHARSET[index]
-            })
-            .collect()
-    }
-
-    pub fn extract_tag(&self, request: &rsip::Request) -> String {
-        if let Ok(f) = request.from_header() {
-            if let Ok(t) = f.tag() {
-                if let Some(tag) = t {
-                    return tag.to_string();
-                }
-            }
+    pub fn decode_body(request: &rsip::Request) -> String {
+        let (body, _encoding, has_error) = encoding_rs::GB18030.decode(&request.body());
+        if has_error {
+            tracing::error!("encoding_rs::GB18030.decode error");
+            return String::new();
         }
 
-        return String::new();
+        if body.find(r#"encoding="GB2312""#).is_some() {
+            return body.replace(r#"encoding="GB2312""#, r#"encoding="utf-8""#);
+        } else if body.find(r#"encoding="GB18030""#).is_some() {
+            return body.replace(r#"encoding="GB18030""#, r#"encoding="utf-8""#);
+        }
+        return body.to_string();
+    }
+
+    pub fn encode_body(data: String) -> Vec<u8> {
+        let s = data.replace(r#"encoding="utf-8""#, r#"encoding="GB18030""#);
+        let (msg, _encoding, has_error) = encoding_rs::GB18030.encode(&s);
+        if has_error {
+            tracing::error!("encoding_rs::GB18030.encode error");
+            return vec![];
+        }
+
+        return msg.to_vec();
     }
 }

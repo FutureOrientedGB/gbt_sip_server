@@ -30,19 +30,33 @@ impl StoreEngine for PostgreStore {
         return false;
     }
 
-    fn find_device_by_gb_code(&self, _key: &String) -> String {
+    fn set_sn(&self, _v: u32) {
+    }
+
+    fn add_fetch_sn(&self) -> u32 {
+        return 0;
+    }
+
+    fn set_call_sequence(&self, _seq: u32) {
+    }
+
+    fn add_fetch_call_sequence(&self) -> u32 {
+        return 0;
+    }
+
+    fn find_device_by_gb_code(&self, _key: &String) -> Option<(String, std::net::SocketAddr)> {
+        return None;
+    }
+
+    fn find_device_by_stream_id(&self, _key: u32) -> Option<(String, std::net::SocketAddr)> {
+        return None;
+    }
+
+    fn find_gb_code(&self, _stream_id: u32) -> String {
         return String::new();
     }
 
-    fn find_device_by_stream_id(&self, _key: u64) -> String {
-        return String::new();
-    }
-
-    fn find_gb_code(&self, _stream_id: u64) -> String {
-        return String::new();
-    }
-
-    fn register(&self, _gb_code: &String, _socket_addr: std::net::SocketAddr) -> bool {
+    fn register(&self, _branch: &String, _gb_code: &String, _socket_addr: std::net::SocketAddr) -> bool {
         return false;
     }
 
@@ -54,22 +68,22 @@ impl StoreEngine for PostgreStore {
         return false;
     }
 
-    fn invite(&self, _gb_code: &String, _is_live: bool) -> (bool, bool, u64) {
+    fn invite(&self, _gb_code: &String, _is_live: bool) -> (bool, bool, u32) {
         return (false, false, 0);
     }
 
-    fn bye(&self, _gb_code: &String, _stream_id: u64) -> bool {
+    fn bye(&self, _gb_code: &String, _stream_id: u32) -> bool {
         return false;
     }
 
-    fn stream_keep_alive(&self, _gb_code: &String, _stream_id: u64) -> bool {
+    fn stream_keep_alive(&self, _gb_code: &String, _stream_id: u32) -> bool {
         return false;
     }
 
     fn start_timeout_check(
         &mut self,
         _timeout_devices_sender: std::sync::mpsc::Sender<Option<String>>,
-        _timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u64)>>,
+        _timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u32)>>,
     ) {
         self.quit_flag = false;
 

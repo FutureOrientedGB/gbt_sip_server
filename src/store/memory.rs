@@ -9,12 +9,14 @@ pub struct MemoryStore {
     pub task_handle: Option<tokio::task::JoinHandle<()>>,
     pub service_id: String, // random generated on boot, report to load balence
     pub sip_socket: std::sync::Arc<tokio::net::UdpSocket>, // self socket communicate with devices
-    pub live_stream_id: std::sync::atomic::AtomicU64, // auto increment
-    pub replay_stream_id: std::sync::atomic::AtomicU64, // auto increment
+    pub live_stream_id: std::sync::atomic::AtomicU32, // auto increment
+    pub replay_stream_id: std::sync::atomic::AtomicU32, // auto increment
+    pub sn: std::sync::atomic::AtomicU32, // SN
+    pub call_sequence: std::sync::atomic::AtomicU32,  // CSeq
     pub sip_devices:
-        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, (std::net::SocketAddr, u64)>>>, // device gb_code -> (net addr, ts)
-    pub gb_streams: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u64, (String, u64)>>>, // stream_id -> (device gb_code, ts)
-    pub gb_streams_rev: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, u64>>>, // device gb_code -> stream_id
+        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, (String, std::net::SocketAddr, u32)>>>, // device gb_code -> (branch, net addr, ts)
+    pub gb_streams: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u32, (String, u32)>>>, // stream_id -> (device gb_code, ts)
+    pub gb_streams_rev: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, u32>>>, // device gb_code -> stream_id
 }
 
 impl MemoryStore {
@@ -27,19 +29,21 @@ impl MemoryStore {
             task_handle: None,
             service_id: Uuid::new_v4().to_string(),
             sip_socket: sip_socket,
-            live_stream_id: std::sync::atomic::AtomicU64::new(0),
-            replay_stream_id: std::sync::atomic::AtomicU64::new(0),
+            live_stream_id: std::sync::atomic::AtomicU32::new(0),
+            replay_stream_id: std::sync::atomic::AtomicU32::new(0),
+            sn: std::sync::atomic::AtomicU32::new(0),
+            call_sequence: std::sync::atomic::AtomicU32::new(0),
             sip_devices: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::<
                 String,
-                (std::net::SocketAddr, u64),
+                (String, std::net::SocketAddr, u32),
             >::default())),
             gb_streams: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::<
-                u64,
-                (String, u64),
+                u32,
+                (String, u32),
             >::default())),
             gb_streams_rev: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::<
                 String,
-                u64,
+                u32,
             >::default())),
         }
     }
@@ -50,29 +54,45 @@ impl StoreEngine for MemoryStore {
         return true;
     }
 
-    fn find_device_by_gb_code(&self, key: &String) -> String {
-        if let Some((addr, _ts)) = self.sip_devices.lock().unwrap().get(key) {
-            return addr.to_string();
-        }
-        return String::new();
+    fn set_sn(&self, v: u32) {
+        self.sn.store(v, std::sync::atomic::Ordering::Relaxed);
     }
 
-    fn find_device_by_stream_id(&self, key: u64) -> String {
+    fn add_fetch_sn(&self) -> u32 {
+        self.sn.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
+    }
+
+    fn set_call_sequence(&self, seq: u32) {
+        self.call_sequence.store(seq, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    fn add_fetch_call_sequence(&self) -> u32 {
+        self.call_sequence.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
+    }
+
+    fn find_device_by_gb_code(&self, key: &String) -> Option<(String, std::net::SocketAddr)> {
+        if let Some((branch, addr, _ts)) = self.sip_devices.lock().unwrap().get(key) {
+            return Some((branch.clone(), addr.clone()));
+        }
+        return None;
+    }
+
+    fn find_device_by_stream_id(&self, key: u32) -> Option<(String, std::net::SocketAddr)> {
         let gb_code = self.find_gb_code(key);
         if !gb_code.is_empty() {
             return self.find_device_by_gb_code(&gb_code);
         }
-        return String::new();
+        return None;
     }
 
-    fn find_gb_code(&self, stream_id: u64) -> String {
+    fn find_gb_code(&self, stream_id: u32) -> String {
         if let Some((gb_code, _ts)) = self.gb_streams.lock().unwrap().get(&stream_id) {
             return gb_code.to_string();
         }
         return String::new();
     }
 
-    fn register(&self, gb_code: &String, socket_addr: std::net::SocketAddr) -> bool {
+    fn register(&self, branch: &String, gb_code: &String, socket_addr: std::net::SocketAddr) -> bool {
         let locked_devices = self.sip_devices.lock().unwrap();
         if locked_devices.get(gb_code).is_none() {
             drop(locked_devices);
@@ -80,12 +100,12 @@ impl StoreEngine for MemoryStore {
             let ts = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .expect("Time went backwards")
-                .as_secs() as u64;
+                .as_secs() as u32;
 
             self.sip_devices
                 .lock()
                 .unwrap()
-                .insert(gb_code.clone(), (socket_addr, ts));
+                .insert(gb_code.clone(), (branch.clone(), socket_addr, ts));
             return true;
         }
         return false;
@@ -104,26 +124,27 @@ impl StoreEngine for MemoryStore {
 
     fn register_keep_alive(&self, gb_code: &String) -> bool {
         let locked_device = self.sip_devices.lock().unwrap();
-        if let Some((addr, _ts)) = locked_device.get(gb_code) {
+        if let Some((brh, addr, _ts)) = locked_device.get(gb_code) {
             let address = addr.clone();
+            let branch = brh.clone();
             drop(locked_device);
 
             let ts = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .expect("Time went backwards")
-                .as_secs() as u64;
+                .as_secs() as u32;
 
             self.sip_devices
                 .lock()
                 .unwrap()
-                .insert(gb_code.clone(), (address, ts));
+                .insert(gb_code.clone(), (branch.clone(), address, ts));
             return true;
         }
         return false;
     }
 
-    fn invite(&self, gb_code: &String, is_live: bool) -> (bool, bool, u64) {
-        if self.find_device_by_gb_code(gb_code).is_empty() {
+    fn invite(&self, gb_code: &String, is_live: bool) -> (bool, bool, u32) {
+        if self.find_device_by_gb_code(gb_code).is_none() {
             return (false, false, 0);
         }
 
@@ -136,7 +157,7 @@ impl StoreEngine for MemoryStore {
         let ts = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .expect("Time went backwards")
-            .as_secs() as u64;
+            .as_secs() as u32;
 
         self.gb_streams
             .lock()
@@ -150,7 +171,7 @@ impl StoreEngine for MemoryStore {
         return (true, is_playing, stream_id)
     }
 
-    fn bye(&self, _gb_code: &String, stream_id: u64) -> bool {
+    fn bye(&self, _gb_code: &String, stream_id: u32) -> bool {
         if self.find_gb_code(stream_id).is_empty() {
             return false;
         }
@@ -159,7 +180,7 @@ impl StoreEngine for MemoryStore {
         return true;
     }
 
-    fn stream_keep_alive(&self, gb_code: &String, stream_id: u64) -> bool {
+    fn stream_keep_alive(&self, gb_code: &String, stream_id: u32) -> bool {
         let locked_streams = self.gb_streams.lock().unwrap();
         if let Some((_gb_code, _ts)) = locked_streams.get(&stream_id) {
             drop(locked_streams);
@@ -167,7 +188,7 @@ impl StoreEngine for MemoryStore {
             let ts = std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .expect("Time went backwards")
-                .as_secs() as u64;
+                .as_secs() as u32;
 
             self.gb_streams
                 .lock()
@@ -181,7 +202,7 @@ impl StoreEngine for MemoryStore {
     fn start_timeout_check(
         &mut self,
         timeout_devices_sender: std::sync::mpsc::Sender<Option<String>>,
-        timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u64)>>,
+        timeout_streams_sender: std::sync::mpsc::Sender<Option<(String, u32)>>,
     ) {
         self.quit_flag = false;
 
@@ -196,9 +217,9 @@ impl StoreEngine for MemoryStore {
                 let ts_now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .expect("Time went backwards")
-                    .as_secs() as u64;
+                    .as_secs() as u32;
 
-                let mut timeout_streams = Vec::<(String, u64)>::default();
+                let mut timeout_streams = Vec::<(String, u32)>::default();
                 for (stream_id, (gb_code, ts)) in gb_streams.lock().unwrap().iter() {
                     if *ts - ts_now > 180 {
                         timeout_streams.push((gb_code.clone(), *stream_id));
@@ -212,7 +233,7 @@ impl StoreEngine for MemoryStore {
                 }
 
                 let mut timeout_devices = Vec::<String>::default();
-                for (gb_code, (_sock, ts)) in sip_devices.lock().unwrap().iter() {
+                for (gb_code, (_branch, _sock, ts)) in sip_devices.lock().unwrap().iter() {
                     if *ts - ts_now > 3600 {
                         timeout_devices.push(gb_code.clone());
                     }
