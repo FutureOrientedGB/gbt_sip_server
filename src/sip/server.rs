@@ -30,21 +30,21 @@ pub async fn run_forever(
     sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
     store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
 ) -> Result<(), std::io::Error> {
-    let mut req_recv_buff = [0; MAX_UDP_SIZE];
-    let mut sip_request_handler = SipRequestHandler::new(&cli_args);
+    let mut recv_buff = [0; MAX_UDP_SIZE];
+    let mut sip_handler = SipRequestHandler::new(&cli_args);
 
     loop {
-        match sip_socket.clone().recv_from(&mut req_recv_buff).await {
+        match sip_socket.clone().recv_from(&mut recv_buff).await {
             Err(e) => {
                 tracing::error!("UdpSocket::recv_from error, e: {:?}", e);
             }
-            Ok((amount, client_addr)) => {
-                sip_request_handler
+            Ok((amount, client_addr)) => {            
+                sip_handler
                     .dispatch(
                         store_engine.clone(),
                         sip_socket.clone(),
                         client_addr,
-                        &req_recv_buff[..amount],
+                        &recv_buff[..amount],
                     )
                     .await;
             }

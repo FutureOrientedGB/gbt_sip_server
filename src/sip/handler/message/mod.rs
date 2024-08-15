@@ -17,7 +17,7 @@ impl SipRequestHandler {
         request: rsip::Request,
     ) {
         // decode body
-        let msg = Self::decode_body(&request);
+        let msg = Self::decode_body(request.body());
 
         // dispatch
         let cmd_type = self.extract_cmd_type(&msg);

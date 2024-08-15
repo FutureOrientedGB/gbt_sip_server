@@ -24,21 +24,38 @@ use tokio;
 use crate::store::base::StoreEngine;
 use crate::utils::ansi_color as Color;
 
+const INVALID_PREFIX: [u8; 3] = [b'S', b'I', b'P'];
+
 impl SipRequestHandler {
     pub async fn dispatch(
         &mut self,
         store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
         sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
         client_addr: SocketAddr,
-        request_data: &[u8],
+        sip_data: &[u8],
     ) {
-        match rsip::Request::try_from(request_data) {
+        if sip_data.len() > INVALID_PREFIX.len() && sip_data[..INVALID_PREFIX.len()] == INVALID_PREFIX {
+            self.dispatch_response(store_engine, sip_socket, client_addr, sip_data).await;
+        } else {
+            self.dispatch_request(store_engine, sip_socket, client_addr, sip_data).await;
+        }
+    }
+
+    pub async fn dispatch_request(
+        &mut self,
+        store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
+        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
+        client_addr: SocketAddr,
+        sip_data: &[u8],
+    ) {
+        match rsip::Request::try_from(sip_data) {
             Err(e) => {
                 tracing::error!(
-                    "{}rsip::Request::try_from error, e: {}{}",
+                    "{}rsip::Request::try_from error, e: {}, {}request_data: {}",
                     Color::RED,
                     e,
-                    Color::RESET
+                    Color::RESET,
+                    String::from_utf8_lossy(sip_data)
                 );
             }
             Ok(request) => {
@@ -47,7 +64,7 @@ impl SipRequestHandler {
                     Color::PURPLE,
                     Color::CYAN,
                     client_addr,
-                    request_data.len(),
+                    sip_data.len(),
                     Color::RESET,
                     format!(
                         "{}{} {} {}{}\n{}{}",
@@ -57,7 +74,7 @@ impl SipRequestHandler {
                         request.uri().to_string(),
                         Color::RESET,
                         request.headers().to_string(),
-                        Self::decode_body(&request)
+                        Self::decode_body(request.body())
                     )
                 );
 
@@ -119,24 +136,44 @@ impl SipRequestHandler {
                             .await
                     }
                 };
-
-                // let mut response_data: Vec<u8> = vec![];
-                // response_data.extend(response.to_string().as_bytes());
-                // if !body.is_empty() {
-                //     // encode body
-                //     let encoded = Self::encode_body(String::from_utf8(body).unwrap());
-                //     response_data.extend(encoded);
-                // }
-
-                // sip::utils::sock::socket_send(
-                //     sip_socket,
-                //     client_addr,
-                //     &response_data,
-                //     response.to_string(),
-                //     "response",
-                // )
-                // .await;
             }
         };
+    }
+
+    pub async fn dispatch_response(
+        &mut self,
+        store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
+        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
+        client_addr: SocketAddr,
+        sip_data: &[u8],
+    ) {
+        match rsip::Response::try_from(sip_data) {
+            Err(e) => {
+                tracing::error!(
+                    "{}rsip::Request::try_from error, e: {}, {}response_data: {}",
+                    Color::RED,
+                    e,
+                    Color::RESET,
+                    String::from_utf8_lossy(sip_data)
+                );
+            }
+            Ok(response) => {
+                tracing::info!(
+                    "{}<<<<< {}UdpSocket::recv_from({}) ok, amount: {:?}, response:{}\n{}",
+                    Color::PURPLE,
+                    Color::CYAN,
+                    client_addr,
+                    sip_data.len(),
+                    Color::RESET,
+                    format!(
+                        "{} {}\n{}{}",
+                        response.version().to_string(),
+                        response.status_code().to_string(),
+                        response.headers().to_string(),
+                        Self::decode_body(response.body())
+                    )
+                );
+            }
+        }
     }
 }
