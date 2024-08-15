@@ -1,15 +1,27 @@
 use std::fs;
 use std::process::Command;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use regex::Regex;
 
 use walkdir::WalkDir;
 
 fn main() {
+    // write timestamp.txt to trigger build.rs
+    let timestamp_file = "timestamp.txt";
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    let timestamp = now.as_secs();
+    fs::write(timestamp_file, timestamp.to_string()).expect("Unable to write file");
+
+    println!("cargo:rerun-if-changed={}", timestamp_file);
+
     replace_version_in_rs(
-        "true"
-            == std::env::var("UPDATE_ALL_FILES").unwrap_or(String::from("false").to_lowercase()),
+        "true" == std::env::var("UPDATE_ALL_FILES").unwrap_or(String::from("false").to_lowercase()),
     );
+
+    fs::remove_file(timestamp_file).unwrap();
 }
 
 fn replace_version_in_rs(update_all_files: bool) {
