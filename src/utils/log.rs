@@ -5,6 +5,8 @@ use time;
 use tracing_appender;
 use tracing_subscriber;
 
+use crate::utils::ansi_color as Color;
+
 pub fn open_daily_file_log(name: &str, port: u16, app_version: &str) {
     let mut log_dir = std::env::current_exe()
         .unwrap()
@@ -35,10 +37,11 @@ pub fn open_daily_file_log(name: &str, port: u16, app_version: &str) {
         "{name}.{port}.log.{}",
         chrono::Local::now().format("%Y-%m-%d")
     ));
-    println!("logging to: {:?}", log_dir);
+    println!("{}logging to: {:?}{}", Color::GREEN, log_dir, Color::RESET);
 
     tracing::info!(
-        "app version: {}{}",
+        "{}app version: {}{}{}",
+        Color::PURPLE,
         app_version,
         r#"
 
@@ -51,6 +54,7 @@ pub fn open_daily_file_log(name: &str, port: u16, app_version: &str) {
     ███    ███   ███    ███     ███             ▄█    ███ ███    ███                ▄█    ███   ███    ███   ███    ███ ███    ███   ███    ███   ███    ███ 
     ████████▀  ▄█████████▀     ▄████▀         ▄████████▀  █▀    ▄████▀            ▄████████▀    ██████████   ███    ███  ▀██████▀    ██████████   ███    ███ 
                                                                                                              ███    ███                           ███    ███ 
-        "#
+        "#,
+        Color::RESET
     );
 }

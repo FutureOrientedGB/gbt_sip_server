@@ -22,6 +22,7 @@ use rsip::{self, prelude::HasHeaders};
 use tokio;
 
 use crate::store::base::StoreEngine;
+use crate::utils::ansi_color as Color;
 
 impl SipRequestHandler {
     pub async fn dispatch(
@@ -33,18 +34,22 @@ impl SipRequestHandler {
     ) {
         match rsip::Request::try_from(request_data) {
             Err(e) => {
-                tracing::error!("rsip::Request::try_from error, e: {:?}", e);
+                tracing::error!("{}rsip::Request::try_from error, e: {}{}", Color::RED, e, Color::RESET);
             }
             Ok(request) => {
                 tracing::info!(
-                    "UdpSocket::recv_from({}) ok, amount: {:?}, data: \n{}",
+                    "{}<<<<< UdpSocket::recv_from({}) ok, amount: {:?}, data:{}\n{}",
+                    Color::CYAN,
                     client_addr,
                     request_data.len(),
+                    Color::RESET,
                     format!(
-                        "{} {} {}\n{}{}",
+                        "{}{} {} {}{}\n{}{}",
+                        Color::YELLOW,
                         request.method().to_string(),
                         request.version().to_string(),
                         request.uri().to_string(),
+                        Color::RESET,
                         request.headers().to_string(),
                         self.decode_body(&request)
                     )
@@ -79,13 +84,15 @@ impl SipRequestHandler {
 
                 match sip_socket.send_to(response_data.as_slice(), client_addr).await {
                     Err(e) => {
-                        tracing::error!("UdpSocket::send_to({}) error, e: {:?}", client_addr, e);
+                        tracing::error!("{}UdpSocket::send_to({}) error, e: {}{}", Color::RED, client_addr, e, Color::RESET);
                     }
                     Ok(amount) => {
                         tracing::info!(
-                            "UdpSocket::send_to({}) ok, amount: {:?}, data: \n{}",
+                            "{}>>>>> UdpSocket::send_to({}) ok, amount: {:?}, data:{}\n{}",
+                            Color::CYAN,
                             client_addr,
                             amount,
+                            Color::RESET,
                             response.to_string()
                         );
                     }
