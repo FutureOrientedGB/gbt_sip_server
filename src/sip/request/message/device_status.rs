@@ -17,8 +17,8 @@ pub async fn query_device_status(
     call_id: &String,
 ) -> bool {
     // body
-    let data = sip::message::DeviceStatusQuery::new(store_engine.add_fetch_sn(), gb_code);
-    let body = sip::handler::SipRequestHandler::encode_body(data.serialize_to_xml());
+    let data = sip::message::DeviceStatusQuery::new(store_engine.add_fetch_sn(), gb_code).serialize_to_xml();
+    let body = sip::handler::SipRequestHandler::encode_body(&data);
 
     // headers
     let mut headers: rsip::Headers = Default::default();
@@ -26,7 +26,6 @@ pub async fn query_device_status(
     headers.push(rsip::headers::MaxForwards::default().into());
     headers.push(sip::handler::SipRequestHandler::from_new(id, domain).into());
     headers.push(sip::handler::SipRequestHandler::to_new(gb_code, domain).into());
-    headers.push(rsip::headers::CallId::default().into());
     headers.push(
         rsip::typed::CSeq {
             seq: store_engine.add_fetch_call_sequence(),
@@ -55,5 +54,5 @@ pub async fn query_device_status(
         body: Default::default(),
     };
 
-    return sip::handler::SipRequestHandler::socket_send_request1(sip_socket, device_addr, request, body).await;
+    return sip::handler::SipRequestHandler::socket_send_request_with_body(sip_socket, device_addr, request, body, data).await;
 }

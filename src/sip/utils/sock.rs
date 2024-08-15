@@ -6,52 +6,96 @@ use crate::sip::handler::SipRequestHandler;
 use crate::utils::ansi_color as Color;
 
 impl SipRequestHandler {
-    pub async fn socket_send_request(
+    pub async fn socket_send_request_headers_only(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
         request: rsip::Request,
     ) -> bool {
-        return Self::socket_send(sip_socket, addr, request.to_string().as_bytes(), request.to_string(), "request").await;
+        return Self::socket_send(
+            sip_socket,
+            addr,
+            request.to_string().as_bytes(),
+            request.to_string(),
+            "request",
+        )
+        .await;
     }
 
-    pub async fn socket_send_request1(
+    pub async fn socket_send_request_with_body(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
         request: rsip::Request,
-        body: Vec<u8>,
+        data_body: Vec<u8>,
+        text_body: String,
     ) -> bool {
-        if body.is_empty() {
-            return Self::socket_send(sip_socket, addr, request.to_string().as_bytes(), request.to_string(), "request").await;
+        if data_body.is_empty() {
+            return Self::socket_send(
+                sip_socket,
+                addr,
+                request.to_string().as_bytes(),
+                request.to_string(),
+                "request",
+            )
+            .await;
         }
 
         let mut request_data: Vec<u8> = vec![];
         request_data.extend(request.to_string().as_bytes());
-        request_data.extend(body);
-        return Self::socket_send(sip_socket, addr, request_data.as_slice(), request.to_string(), "request").await;
+        request_data.extend(data_body);
+        return Self::socket_send(
+            sip_socket,
+            addr,
+            request_data.as_slice(),
+            format!("{}{}", request.to_string(), text_body),
+            "request",
+        )
+        .await;
     }
 
-    pub async fn socket_send_response(
+    pub async fn socket_send_response_headers_only(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
         response: rsip::Response,
     ) -> bool {
-        return Self::socket_send(sip_socket, addr, response.to_string().as_bytes(), response.to_string(), "response").await;
+        return Self::socket_send(
+            sip_socket,
+            addr,
+            response.to_string().as_bytes(),
+            response.to_string(),
+            "response",
+        )
+        .await;
     }
 
-    pub async fn socket_send_response1(
+    pub async fn socket_send_response_with_body(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
         response: rsip::Response,
-        body: Vec<u8>,
+        data_body: Vec<u8>,
+        text_body: String,
     ) -> bool {
-        if body.is_empty() {
-            return Self::socket_send(sip_socket, addr, response.to_string().as_bytes(), response.to_string(), "response").await;
+        if data_body.is_empty() {
+            return Self::socket_send(
+                sip_socket,
+                addr,
+                response.to_string().as_bytes(),
+                response.to_string(),
+                "response",
+            )
+            .await;
         }
 
         let mut response_data: Vec<u8> = vec![];
         response_data.extend(response.to_string().as_bytes());
-        response_data.extend(body);
-        return Self::socket_send(sip_socket, addr, response_data.as_slice(), response.to_string(), "response").await;
+        response_data.extend(data_body);
+        return Self::socket_send(
+            sip_socket,
+            addr,
+            response_data.as_slice(),
+            format!("{}{}", response.to_string(), text_body),
+            "response",
+        )
+        .await;
     }
 
     pub async fn socket_send(

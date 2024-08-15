@@ -8,10 +8,10 @@ pub mod version;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // parse command line arguments
-    let cli_args = utils::cli::CommandLines::new();
+    let cli_args = utils::cli::CommandLines::new(&version::APP_NAME, &version::APP_VERSION);
 
     // open daily log
-    utils::log::open_daily_file_log(&version::APP_NAME, cli_args.sip_port, &version::APP_VERSION);
+    utils::log::open_daily_file_log(&version::APP_NAME, &version::APP_VERSION, cli_args.sip_port);
 
     // prepare sip server
     let sip_socket = sip::server::bind(&cli_args).await?;

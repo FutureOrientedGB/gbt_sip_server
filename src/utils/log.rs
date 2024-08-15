@@ -7,7 +7,7 @@ use tracing_subscriber;
 
 use crate::utils::ansi_color as Color;
 
-pub fn open_daily_file_log(name: &str, port: u16, app_version: &str) {
+pub fn open_daily_file_log(app_name: &str, app_version: &str, sip_port: u16) {
     let mut log_dir = std::env::current_exe()
         .unwrap()
         .parent()
@@ -19,7 +19,7 @@ pub fn open_daily_file_log(name: &str, port: u16, app_version: &str) {
         // .json()
         .with_writer(tracing_appender::rolling::daily(
             &log_dir,
-            format!("{name}.{port}.log"),
+            format!("{app_name}.{sip_port}.log"),
         ))
         .with_max_level(tracing::Level::INFO)
         .with_timer(tracing_subscriber::fmt::time::OffsetTime::new(
@@ -34,27 +34,27 @@ pub fn open_daily_file_log(name: &str, port: u16, app_version: &str) {
         .init();
 
     log_dir.push(format!(
-        "{name}.{port}.log.{}",
+        "{app_name}.{sip_port}.log.{}",
         chrono::Local::now().format("%Y-%m-%d")
     ));
-    println!("{}logging to: {}{}", Color::PURPLE, log_dir.to_str().unwrap(), Color::RESET);
+    println!(
+        "{}logging to: {}{}",
+        Color::PURPLE,
+        log_dir.to_str().unwrap(),
+        Color::RESET
+    );
 
     tracing::info!(
-        "{}app version: {}{}{}",
+        "start services{}
++────────────────────────────────────────+
+│ ┌─┐┌┐┌┬┐  ┌─┐┬┌─┐  ┌─┐┌─┐┬─┐┬  ┬┌─┐┬─┐ │
+│ │ ┬├┴┐│   └─┐│├─┘  └─┐├┤ ├┬┘└┐┌┘├┤ ├┬┘ │
+│ └─┘└─┘┴   └─┘┴┴    └─┘└─┘┴└─ └┘ └─┘┴└─ │
+│        {}         │
++────────────────────────────────────────+
+{}",
         Color::PURPLE,
         app_version,
-        r#"
-
-    ▄██████▄  ▀█████████▄      ███             ▄████████  ▄█     ▄███████▄         ▄████████    ▄████████    ▄████████  ▄█    █▄     ▄████████    ▄████████ 
-    ███    ███   ███    ███ ▀█████████▄        ███    ███ ███    ███    ███        ███    ███   ███    ███   ███    ███ ███    ███   ███    ███   ███    ███ 
-    ███    █▀    ███    ███    ▀███▀▀██        ███    █▀  ███▌   ███    ███        ███    █▀    ███    █▀    ███    ███ ███    ███   ███    █▀    ███    ███ 
-   ▄███         ▄███▄▄▄██▀      ███   ▀        ███        ███▌   ███    ███        ███         ▄███▄▄▄      ▄███▄▄▄▄██▀ ███    ███  ▄███▄▄▄      ▄███▄▄▄▄██▀ 
-  ▀▀███ ████▄  ▀▀███▀▀▀██▄      ███          ▀███████████ ███▌ ▀█████████▀       ▀███████████ ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   ███    ███ ▀▀███▀▀▀     ▀▀███▀▀▀▀▀   
-    ███    ███   ███    ██▄     ███                   ███ ███    ███                      ███   ███    █▄  ▀███████████ ███    ███   ███    █▄  ▀███████████ 
-    ███    ███   ███    ███     ███             ▄█    ███ ███    ███                ▄█    ███   ███    ███   ███    ███ ███    ███   ███    ███   ███    ███ 
-    ████████▀  ▄█████████▀     ▄████▀         ▄████████▀  █▀    ▄████▀            ▄████████▀    ██████████   ███    ███  ▀██████▀    ██████████   ███    ███ 
-                                                                                                             ███    ███                           ███    ███ 
-        "#,
         Color::RESET
     );
 }

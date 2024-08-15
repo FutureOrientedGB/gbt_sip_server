@@ -47,8 +47,8 @@ pub struct CommandLines {
 }
 
 impl CommandLines {
-    pub fn new() -> CommandLines {
-        let cli_app = CommandLines::clap().name(version::APP_NAME).version(version::APP_VERSION);
+    pub fn new(app_name: &str, app_version: &str) -> CommandLines {
+        let cli_app = CommandLines::clap().name(app_name).version(app_version);
         CommandLines::from_clap(&cli_app.get_matches())
     }
 }

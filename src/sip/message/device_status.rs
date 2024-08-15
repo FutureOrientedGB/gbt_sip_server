@@ -60,6 +60,7 @@ impl DeviceStatus {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename = "Query")]
 pub struct DeviceStatusQuery {
     #[serde(rename = "CmdType")]
     cmd_type: String,
