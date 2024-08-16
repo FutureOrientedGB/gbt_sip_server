@@ -6,7 +6,7 @@ use crate::sip::handler::SipRequestHandler;
 use crate::utils::ansi_color as Color;
 
 impl SipRequestHandler {
-    pub async fn socket_send_request_headers_only(
+    pub async fn socket_send_request_lite(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
         request: rsip::Request,
@@ -21,27 +21,16 @@ impl SipRequestHandler {
         .await;
     }
 
-    pub async fn socket_send_request_with_body(
+    pub async fn socket_send_request_heavy(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
         request: rsip::Request,
-        data_body: Vec<u8>,
+        bin_body: Vec<u8>,
         text_body: String,
     ) -> bool {
-        if data_body.is_empty() {
-            return Self::socket_send(
-                sip_socket,
-                addr,
-                request.to_string().as_bytes(),
-                request.to_string(),
-                "request",
-            )
-            .await;
-        }
-
         let mut request_data: Vec<u8> = vec![];
         request_data.extend(request.to_string().as_bytes());
-        request_data.extend(data_body);
+        request_data.extend(bin_body);
         return Self::socket_send(
             sip_socket,
             addr,
@@ -52,7 +41,7 @@ impl SipRequestHandler {
         .await;
     }
 
-    pub async fn socket_send_response_headers_only(
+    pub async fn socket_send_response_lite(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
         response: rsip::Response,
@@ -67,27 +56,16 @@ impl SipRequestHandler {
         .await;
     }
 
-    pub async fn socket_send_response_with_body(
+    pub async fn socket_send_response_heavy(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
         response: rsip::Response,
-        data_body: Vec<u8>,
+        bin_body: Vec<u8>,
         text_body: String,
     ) -> bool {
-        if data_body.is_empty() {
-            return Self::socket_send(
-                sip_socket,
-                addr,
-                response.to_string().as_bytes(),
-                response.to_string(),
-                "response",
-            )
-            .await;
-        }
-
         let mut response_data: Vec<u8> = vec![];
         response_data.extend(response.to_string().as_bytes());
-        response_data.extend(data_body);
+        response_data.extend(bin_body);
         return Self::socket_send(
             sip_socket,
             addr,
@@ -108,17 +86,18 @@ impl SipRequestHandler {
         match sip_socket.send_to(data, addr).await {
             Err(e) => {
                 tracing::error!(
-                    "{}UdpSocket::send_to({}) error, e: {}{}",
+                    "{}UdpSocket::send_to({}) error, e: {}, {}data: {}",
                     Color::RED,
                     addr,
                     e,
-                    Color::RESET
+                    Color::RESET,
+                    text
                 );
                 return false;
             }
             Ok(amount) => {
                 tracing::info!(
-                    "{}>>>>> {}UdpSocket::send_to({}) ok, amount: {:?}, {}:{}\n{}",
+                    "{}⮞⮞⮞⮞⮞ {}UdpSocket::send_to({}) ok, amount: {:?}, {}:{}\n{}",
                     Color::GREEN,
                     Color::CYAN,
                     addr,

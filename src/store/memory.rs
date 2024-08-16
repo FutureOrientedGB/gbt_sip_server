@@ -11,8 +11,9 @@ pub struct MemoryStore {
     pub sip_socket: std::sync::Arc<tokio::net::UdpSocket>, // self socket communicate with devices
     pub live_stream_id: std::sync::atomic::AtomicU32, // auto increment
     pub replay_stream_id: std::sync::atomic::AtomicU32, // auto increment
-    pub sn: std::sync::atomic::AtomicU32, // SN
-    pub call_sequence: std::sync::atomic::AtomicU32,  // CSeq
+    pub global_sn: std::sync::atomic::AtomicU32, // SN
+    pub register_sequence: std::sync::atomic::AtomicU32,  // CSeq
+    pub global_sequence: std::sync::atomic::AtomicU32,  // CSeq
     pub sip_devices:
         std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, (String, std::net::SocketAddr, u32)>>>, // device gb_code -> (branch, net addr, ts)
     pub gb_streams: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u32, (String, u32)>>>, // stream_id -> (device gb_code, ts)
@@ -31,8 +32,9 @@ impl MemoryStore {
             sip_socket: sip_socket,
             live_stream_id: std::sync::atomic::AtomicU32::new(0),
             replay_stream_id: std::sync::atomic::AtomicU32::new(0),
-            sn: std::sync::atomic::AtomicU32::new(0),
-            call_sequence: std::sync::atomic::AtomicU32::new(0),
+            global_sn: std::sync::atomic::AtomicU32::new(0),
+            register_sequence: std::sync::atomic::AtomicU32::new(0),
+            global_sequence: std::sync::atomic::AtomicU32::new(0),
             sip_devices: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::<
                 String,
                 (String, std::net::SocketAddr, u32),
@@ -54,20 +56,28 @@ impl StoreEngine for MemoryStore {
         return true;
     }
 
-    fn set_sn(&self, v: u32) {
-        self.sn.store(v, std::sync::atomic::Ordering::Relaxed);
+    fn set_global_sn(&self, v: u32) {
+        self.global_sn.store(v, std::sync::atomic::Ordering::Relaxed);
     }
 
-    fn add_fetch_sn(&self) -> u32 {
-        self.sn.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
+    fn add_fetch_global_sn(&self) -> u32 {
+        self.global_sn.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
     }
 
-    fn set_call_sequence(&self, seq: u32) {
-        self.call_sequence.store(seq, std::sync::atomic::Ordering::Relaxed);
+    fn set_register_sequence(&self, seq: u32) {
+        self.register_sequence.store(seq, std::sync::atomic::Ordering::Relaxed);
     }
 
-    fn add_fetch_call_sequence(&self) -> u32 {
-        self.call_sequence.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
+    fn add_fetch_register_sequence(&self) -> u32 {
+        self.register_sequence.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
+    }
+
+    fn set_global_sequence(&self, seq: u32) {
+        self.global_sequence.store(seq, std::sync::atomic::Ordering::Relaxed);
+    }
+
+    fn add_fetch_global_sequence(&self) -> u32 {
+        self.global_sequence.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
     }
 
     fn find_device_by_gb_code(&self, key: &String) -> Option<(String, std::net::SocketAddr)> {

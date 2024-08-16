@@ -1,11 +1,14 @@
 pub trait StoreEngine: Send + Sync {
     fn is_connected(&self) -> bool;
 
-    fn set_sn(&self, v: u32);
-    fn add_fetch_sn(&self) -> u32;
+    fn set_global_sn(&self, v: u32);
+    fn add_fetch_global_sn(&self) -> u32;
 
-    fn set_call_sequence(&self, seq: u32);
-    fn add_fetch_call_sequence(&self) -> u32;
+    fn set_register_sequence(&self, seq: u32);
+    fn add_fetch_register_sequence(&self) -> u32;
+
+    fn set_global_sequence(&self, seq: u32);
+    fn add_fetch_global_sequence(&self) -> u32;
 
     fn find_device_by_gb_code(&self, key: &String) -> Option<(String, std::net::SocketAddr)>;
     fn find_device_by_stream_id(&self, key: u32) -> Option<(String, std::net::SocketAddr)>;

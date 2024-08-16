@@ -6,13 +6,13 @@ use tracing;
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct KeepAlive {
     #[serde(rename = "CmdType")]
-    cmd_type: String,
+    pub cmd_type: String,
     #[serde(rename = "SN")]
-    sn: u32,
+    pub sn: u32,
     #[serde(rename = "DeviceID")]
-    device_id: String,
+    pub device_id: String,
     #[serde(rename = "Status")]
-    status: String,
+    pub status: String,
 }
 
 impl KeepAlive {

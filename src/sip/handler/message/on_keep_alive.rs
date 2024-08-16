@@ -13,7 +13,10 @@ impl SipRequestHandler {
         request: rsip::Request,
         msg: String,
     ) {
-        let _data = KeepAlive::deserialize_from_xml(msg);
+        let data = KeepAlive::deserialize_from_xml(msg);
+        if data.sn > 0 {
+            store_engine.set_global_sn(data.sn);
+        }
 
         let gb_code = request
             .from_header()
@@ -32,15 +35,5 @@ impl SipRequestHandler {
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
         headers.push(rsip::Header::ContentLength(Default::default()));
-
-        // (
-        //     rsip::Response {
-        //         status_code: rsip::StatusCode::OK,
-        //         headers,
-        //         version: rsip::Version::V2,
-        //         body: Default::default(),
-        //     },
-        //     vec![],
-        // )
     }
 }

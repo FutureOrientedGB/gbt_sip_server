@@ -30,17 +30,24 @@ impl StoreEngine for PostgreStore {
         return false;
     }
 
-    fn set_sn(&self, _v: u32) {
+    fn set_global_sn(&self, _v: u32) {
     }
 
-    fn add_fetch_sn(&self) -> u32 {
+    fn add_fetch_global_sn(&self) -> u32 {
+        return 0;
+    }
+    
+    fn set_register_sequence(&self, _seq: u32) {
+    }
+
+    fn add_fetch_register_sequence(&self) -> u32 {
         return 0;
     }
 
-    fn set_call_sequence(&self, _seq: u32) {
+    fn set_global_sequence(&self, _seq: u32) {
     }
 
-    fn add_fetch_call_sequence(&self) -> u32 {
+    fn add_fetch_global_sequence(&self) -> u32 {
         return 0;
     }
 

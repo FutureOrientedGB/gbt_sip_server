@@ -1,5 +1,6 @@
 pub mod base;
 pub use base::SipRequestHandler;
+use rsip::prelude::{HeadersExt, ToTypedHeader};
 pub mod ack;
 pub mod bye;
 pub mod cancel;
@@ -51,7 +52,7 @@ impl SipRequestHandler {
         match rsip::Request::try_from(sip_data) {
             Err(e) => {
                 tracing::error!(
-                    "{}rsip::Request::try_from error, e: {}, {}request_data: {}",
+                    "{}rsip::Request::try_from error, e: {}, {}request: {}",
                     Color::RED,
                     e,
                     Color::RESET,
@@ -60,7 +61,7 @@ impl SipRequestHandler {
             }
             Ok(request) => {
                 tracing::info!(
-                    "{}<<<<< {}UdpSocket::recv_from({}) ok, amount: {:?}, request:{}\n{}",
+                    "{}⮜⮜⮜⮜⮜ {}UdpSocket::recv_from({}) ok, amount: {:?}, request:{}\n{}",
                     Color::PURPLE,
                     Color::CYAN,
                     client_addr,
@@ -77,6 +78,15 @@ impl SipRequestHandler {
                         Self::decode_body(request.body())
                     )
                 );
+
+                let seq = request.cseq_header().unwrap().typed().unwrap().seq;
+                if seq > 0 {
+                    if request.method() == &rsip::Method::Register {
+                        store_engine.set_register_sequence(seq);
+                    } else {
+                        store_engine.set_global_sequence(seq);
+                    }
+                }
 
                 match request.method() {
                     rsip::Method::Register => {
@@ -150,7 +160,7 @@ impl SipRequestHandler {
         match rsip::Response::try_from(sip_data) {
             Err(e) => {
                 tracing::error!(
-                    "{}rsip::Request::try_from error, e: {}, {}response_data: {}",
+                    "{}rsip::Request::try_from error, e: {}, {}response: {}",
                     Color::RED,
                     e,
                     Color::RESET,
@@ -159,7 +169,7 @@ impl SipRequestHandler {
             }
             Ok(response) => {
                 tracing::info!(
-                    "{}<<<<< {}UdpSocket::recv_from({}) ok, amount: {:?}, response:{}\n{}",
+                    "{}⮜⮜⮜⮜⮜ {}UdpSocket::recv_from({}) ok, amount: {:?}, response:{}\n{}",
                     Color::PURPLE,
                     Color::CYAN,
                     client_addr,

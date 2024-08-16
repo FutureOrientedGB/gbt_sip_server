@@ -70,7 +70,7 @@ impl SipRequestHandler {
             body: Default::default(),
         };
 
-        Self::socket_send_response_headers_only(&sip_socket, client_addr, response).await;
+        Self::socket_send_response_lite(&sip_socket, client_addr, response).await;
     }
 
     async fn on_register_200(
@@ -116,7 +116,7 @@ impl SipRequestHandler {
             body: Default::default(),
         };
 
-        Self::socket_send_response_headers_only(&sip_socket, client_addr, response).await;
+        Self::socket_send_response_lite(&sip_socket, client_addr, response).await;
 
         if is_register {
             sip::request::message::device_status::query_device_status(

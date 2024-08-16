@@ -12,25 +12,25 @@ pub struct AlarmStatus {
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct DeviceStatus {
     #[serde(rename = "CmdType")]
-    cmd_type: String,
+    pub cmd_type: String,
     #[serde(rename = "SN")]
-    sn: u32,
+    pub sn: u32,
     #[serde(rename = "DeviceID")]
-    device_id: String,
+    pub device_id: String,
     #[serde(rename = "Result")]
-    result: String,
+    pub result: String,
     #[serde(rename = "Online")]
-    online: String,
+    pub online: String,
     #[serde(rename = "Status")]
-    status: String,
+    pub status: String,
     #[serde(rename = "DeviceTime")]
-    device_time: String,
+    pub device_time: String,
     #[serde(rename = "Alarmstatus")]
-    alarm_status: AlarmStatus,
+    pub alarm_status: AlarmStatus,
     #[serde(rename = "Encode")]
-    encode: String,
+    pub encode: String,
     #[serde(rename = "Record")]
-    record: String,
+    pub record: String,
 }
 
 impl DeviceStatus {
@@ -63,11 +63,11 @@ impl DeviceStatus {
 #[serde(rename = "Query")]
 pub struct DeviceStatusQuery {
     #[serde(rename = "CmdType")]
-    cmd_type: String,
+    pub cmd_type: String,
     #[serde(rename = "SN")]
-    sn: u32,
+    pub sn: u32,
     #[serde(rename = "DeviceID")]
-    device_id: String,
+    pub device_id: String,
 }
 
 impl DeviceStatusQuery {
