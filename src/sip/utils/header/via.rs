@@ -6,12 +6,12 @@ use rsip::{
 use crate::sip::handler::base::SipHandler;
 
 impl SipHandler {
-    pub fn via(ip: &String, port: u16, branch: &String) -> sip_rs::headers::Via {
+    pub fn via(&self, branch: &String) -> sip_rs::headers::Via {
         sip_rs::typed::Via {
             version: sip_rs::Version::V2,
             transport: sip_rs::Transport::Udp,
             uri: sip_rs::Uri {
-                host_with_port: (ip.clone(), port).into(),
+                host_with_port: (self.ip.clone(), self.port).into(),
                 ..Default::default()
             },
             params: vec![

@@ -1,10 +1,7 @@
 use tokio;
 
 use crate::sip::handler::SipHandler;
-use crate::store::base::StoreEngine;
 use crate::utils::cli::CommandLines;
-
-const MAX_UDP_SIZE: usize = 65535;
 
 pub async fn bind(cli_args: &CommandLines) -> Result<tokio::net::UdpSocket, std::io::Error> {
     let local_addr = format!(
@@ -27,25 +24,24 @@ pub async fn bind(cli_args: &CommandLines) -> Result<tokio::net::UdpSocket, std:
 
 pub async fn run_forever(
     cli_args: &CommandLines,
-    sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
-    store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
+    sip_handler: &std::sync::Arc<SipHandler>,
 ) -> Result<(), std::io::Error> {
-    let mut recv_buff = [0; MAX_UDP_SIZE];
-    let mut sip_handler = SipHandler::new(&cli_args);
+    let mut recv_buff = Vec::<u8>::default();
+    recv_buff.resize(cli_args.socket_recv_buffer_size, 0);
 
     loop {
-        match sip_socket.clone().recv_from(&mut recv_buff).await {
+        match sip_handler
+            .clone()
+            .sip_socket
+            .recv_from(recv_buff.as_mut_slice())
+            .await
+        {
             Err(e) => {
                 tracing::error!("UdpSocket::recv_from error, e: {:?}", e);
             }
-            Ok((amount, client_addr)) => {            
+            Ok((amount, client_addr)) => {
                 sip_handler
-                    .dispatch(
-                        store_engine.clone(),
-                        sip_socket.clone(),
-                        client_addr,
-                        &recv_buff[..amount],
-                    )
+                    .dispatch(client_addr, &recv_buff.as_slice()[..amount])
                     .await;
             }
         }

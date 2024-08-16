@@ -1,35 +1,31 @@
 use tokio;
 use uuid::Uuid;
 
-use crate::utils::cli::CommandLines;
 use crate::store::base::StoreEngine;
+use crate::utils::cli::CommandLines;
 
 pub struct MemoryStore {
     pub quit_flag: bool,
     pub task_handle: Option<tokio::task::JoinHandle<()>>,
     pub service_id: String, // random generated on boot, report to load balence
-    pub sip_socket: std::sync::Arc<tokio::net::UdpSocket>, // self socket communicate with devices
     pub live_stream_id: std::sync::atomic::AtomicU32, // auto increment
     pub replay_stream_id: std::sync::atomic::AtomicU32, // auto increment
     pub global_sn: std::sync::atomic::AtomicU32, // SN
-    pub register_sequence: std::sync::atomic::AtomicU32,  // CSeq
-    pub global_sequence: std::sync::atomic::AtomicU32,  // CSeq
-    pub sip_devices:
-        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, (String, std::net::SocketAddr, u32)>>>, // device gb_code -> (branch, net addr, ts)
+    pub register_sequence: std::sync::atomic::AtomicU32, // CSeq
+    pub global_sequence: std::sync::atomic::AtomicU32, // CSeq
+    pub sip_devices: std::sync::Arc<
+        std::sync::Mutex<std::collections::HashMap<String, (String, std::net::SocketAddr, u32)>>,
+    >, // device gb_code -> (branch, net addr, ts)
     pub gb_streams: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u32, (String, u32)>>>, // stream_id -> (device gb_code, ts)
     pub gb_streams_rev: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, u32>>>, // device gb_code -> stream_id
 }
 
 impl MemoryStore {
-    pub fn new(
-        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
-        _cli_args: &CommandLines,
-    ) -> Self {
+    pub fn new(_cli_args: &CommandLines) -> Self {
         MemoryStore {
             quit_flag: true,
             task_handle: None,
             service_id: Uuid::new_v4().to_string(),
-            sip_socket: sip_socket,
             live_stream_id: std::sync::atomic::AtomicU32::new(0),
             replay_stream_id: std::sync::atomic::AtomicU32::new(0),
             global_sn: std::sync::atomic::AtomicU32::new(0),
@@ -43,10 +39,9 @@ impl MemoryStore {
                 u32,
                 (String, u32),
             >::default())),
-            gb_streams_rev: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::<
-                String,
-                u32,
-            >::default())),
+            gb_streams_rev: std::sync::Arc::new(std::sync::Mutex::new(
+                std::collections::HashMap::<String, u32>::default(),
+            )),
         }
     }
 }
@@ -57,27 +52,36 @@ impl StoreEngine for MemoryStore {
     }
 
     fn set_global_sn(&self, v: u32) {
-        self.global_sn.store(v, std::sync::atomic::Ordering::Relaxed);
+        self.global_sn
+            .store(v, std::sync::atomic::Ordering::Relaxed);
     }
 
     fn add_fetch_global_sn(&self) -> u32 {
-        self.global_sn.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
+        self.global_sn
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            + 1
     }
 
     fn set_register_sequence(&self, seq: u32) {
-        self.register_sequence.store(seq, std::sync::atomic::Ordering::Relaxed);
+        self.register_sequence
+            .store(seq, std::sync::atomic::Ordering::Relaxed);
     }
 
     fn add_fetch_register_sequence(&self) -> u32 {
-        self.register_sequence.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
+        self.register_sequence
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            + 1
     }
 
     fn set_global_sequence(&self, seq: u32) {
-        self.global_sequence.store(seq, std::sync::atomic::Ordering::Relaxed);
+        self.global_sequence
+            .store(seq, std::sync::atomic::Ordering::Relaxed);
     }
 
     fn add_fetch_global_sequence(&self) -> u32 {
-        self.global_sequence.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1
+        self.global_sequence
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            + 1
     }
 
     fn find_device_by_gb_code(&self, key: &String) -> Option<(String, std::net::SocketAddr)> {
@@ -102,7 +106,12 @@ impl StoreEngine for MemoryStore {
         return String::new();
     }
 
-    fn register(&self, branch: &String, gb_code: &String, socket_addr: std::net::SocketAddr) -> bool {
+    fn register(
+        &self,
+        branch: &String,
+        gb_code: &String,
+        socket_addr: std::net::SocketAddr,
+    ) -> bool {
         let locked_devices = self.sip_devices.lock().unwrap();
         if locked_devices.get(gb_code).is_none() {
             drop(locked_devices);
@@ -159,9 +168,11 @@ impl StoreEngine for MemoryStore {
         }
 
         let stream_id = if is_live {
-            self.live_stream_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            self.live_stream_id
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
         } else {
-            self.replay_stream_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+            self.replay_stream_id
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
         };
 
         let ts = std::time::SystemTime::now()
@@ -176,9 +187,12 @@ impl StoreEngine for MemoryStore {
 
         let is_playing = self.gb_streams_rev.lock().unwrap().get(gb_code).is_some();
 
-        self.gb_streams_rev.lock().unwrap().insert(gb_code.clone(), stream_id);
+        self.gb_streams_rev
+            .lock()
+            .unwrap()
+            .insert(gb_code.clone(), stream_id);
 
-        return (true, is_playing, stream_id)
+        return (true, is_playing, stream_id);
     }
 
     fn bye(&self, _gb_code: &String, stream_id: u32) -> bool {

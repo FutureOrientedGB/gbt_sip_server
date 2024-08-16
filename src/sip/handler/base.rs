@@ -3,6 +3,7 @@ use std::str::FromStr;
 use rsip as sip_rs;
 
 use crate::utils::cli::CommandLines;
+use crate::store::base::StoreEngine;
 
 pub struct SipHandler {
     pub ip: String,
@@ -14,10 +15,12 @@ pub struct SipHandler {
     pub nonce: String,
     pub realm: String,
     pub call_id: String,
+    pub store: Box<dyn StoreEngine>,
+    pub sip_socket: tokio::net::UdpSocket,
 }
 
 impl SipHandler {
-    pub fn new(cli_args: &CommandLines) -> Self {
+    pub fn new(cli_args: &CommandLines, store: Box<dyn StoreEngine>, sip_socket: tokio::net::UdpSocket) -> Self {
         SipHandler {
             ip: cli_args.sip_ip.clone(),
             port: cli_args.sip_port,
@@ -28,6 +31,8 @@ impl SipHandler {
             nonce: cli_args.sip_nonce.clone(),
             realm: cli_args.sip_realm.clone(),
             call_id: cli_args.call_id.clone(),
+            store: store,
+            sip_socket: sip_socket,
         }
     }
 }

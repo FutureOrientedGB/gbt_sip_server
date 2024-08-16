@@ -1,26 +1,21 @@
 use tokio;
 use uuid::Uuid;
 
-use crate::utils::cli::CommandLines;
 use crate::store::base::StoreEngine;
+use crate::utils::cli::CommandLines;
 
 pub struct PostgreStore {
     pub quit_flag: bool,
     pub task_handle: Option<tokio::task::JoinHandle<()>>,
     pub service_id: String, // random generated on boot, report to load balence
-    pub sip_socket: std::sync::Arc<tokio::net::UdpSocket>, // self socket communicate with devices
 }
 
 impl PostgreStore {
-    pub fn new(
-        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
-        _cli_args: &CommandLines,
-    ) -> Self {
+    pub fn new(_cli_args: &CommandLines) -> Self {
         PostgreStore {
             quit_flag: true,
             task_handle: None,
             service_id: Uuid::new_v4().to_string(),
-            sip_socket: sip_socket,
         }
     }
 }
@@ -30,22 +25,19 @@ impl StoreEngine for PostgreStore {
         return false;
     }
 
-    fn set_global_sn(&self, _v: u32) {
-    }
+    fn set_global_sn(&self, _v: u32) {}
 
     fn add_fetch_global_sn(&self) -> u32 {
         return 0;
     }
-    
-    fn set_register_sequence(&self, _seq: u32) {
-    }
+
+    fn set_register_sequence(&self, _seq: u32) {}
 
     fn add_fetch_register_sequence(&self) -> u32 {
         return 0;
     }
 
-    fn set_global_sequence(&self, _seq: u32) {
-    }
+    fn set_global_sequence(&self, _seq: u32) {}
 
     fn add_fetch_global_sequence(&self) -> u32 {
         return 0;
@@ -63,7 +55,12 @@ impl StoreEngine for PostgreStore {
         return String::new();
     }
 
-    fn register(&self, _branch: &String, _gb_code: &String, _socket_addr: std::net::SocketAddr) -> bool {
+    fn register(
+        &self,
+        _branch: &String,
+        _gb_code: &String,
+        _socket_addr: std::net::SocketAddr,
+    ) -> bool {
         return false;
     }
 

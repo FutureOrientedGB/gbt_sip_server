@@ -6,16 +6,9 @@ use regex::Regex;
 use rsip as sip_rs;
 
 use crate::sip::handler::base::SipHandler;
-use crate::store::base::StoreEngine;
 
 impl SipHandler {
-    pub async fn on_message(
-        &mut self,
-        store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
-        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
-        client_addr: std::net::SocketAddr,
-        request: sip_rs::Request,
-    ) {
+    pub async fn on_message(&self, client_addr: std::net::SocketAddr, request: sip_rs::Request) {
         // decode body
         let msg = Self::decode_body(request.body());
 
@@ -23,12 +16,10 @@ impl SipHandler {
         let cmd_type = self.extract_cmd_type(&msg);
         match cmd_type.as_str() {
             "Keepalive" => {
-                self.on_keep_alive(store_engine, sip_socket, client_addr, request, msg)
-                    .await;
+                self.on_keep_alive(client_addr, request, msg).await;
             }
             "DeviceStatus" => {
-                self.on_device_status(store_engine, sip_socket, client_addr, request, msg)
-                    .await;
+                self.on_device_status(client_addr, request, msg).await;
             }
             _ => {}
         }

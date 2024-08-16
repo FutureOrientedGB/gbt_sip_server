@@ -3,50 +3,27 @@ use rsip::{
     prelude::{HeadersExt, ToTypedHeader},
 };
 
-use crate::{
-    sip::handler::base::SipHandler,
-    store::base::StoreEngine,
-};
+use crate::sip::handler::base::SipHandler;
 
 impl SipHandler {
-    pub async fn on_register(
-        &mut self,
-        store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
-        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
-        client_addr: std::net::SocketAddr,
-        request: sip_rs::Request,
-    ) {
+    pub async fn on_register(&self, client_addr: std::net::SocketAddr, request: sip_rs::Request) {
         if let Some(auth) = request.authorization_header() {
             if let Ok(auth) = auth.typed() {
                 if self.is_authorized(&auth.username, request.method(), &auth.uri, &auth.response) {
                     return self
-                        .on_register_200(
-                            &store_engine,
-                            &sip_socket,
-                            client_addr,
-                            &request,
-                            &auth.username,
-                        )
+                        .on_register_200(client_addr, &request, &auth.username)
                         .await;
                 }
             }
         }
 
-        return self
-            .on_register_401(&store_engine, &sip_socket, client_addr, &request)
-            .await;
+        return self.on_register_401(client_addr, &request).await;
     }
 
-    async fn on_register_401(
-        &self,
-        _store_engine: &std::sync::Arc<Box<dyn StoreEngine>>,
-        sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
-        client_addr: std::net::SocketAddr,
-        request: &sip_rs::Request,
-    ) {
+    async fn on_register_401(&self, client_addr: std::net::SocketAddr, request: &sip_rs::Request) {
         let mut headers: sip_rs::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
-        headers.push(Self::from_old(&request, &self.id, &self.domain).into());
+        headers.push(self.from_old(&request).into());
         headers.push(self.to_old(&request).into());
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
@@ -70,13 +47,11 @@ impl SipHandler {
             body: Default::default(),
         };
 
-        Self::socket_send_response_lite(&sip_socket, client_addr, response).await;
+        self.socket_send_response_lite(client_addr, response).await;
     }
 
     async fn on_register_200(
         &self,
-        store_engine: &std::sync::Arc<Box<dyn StoreEngine>>,
-        sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         client_addr: std::net::SocketAddr,
         request: &sip_rs::Request,
         gb_code: &String,
@@ -85,7 +60,7 @@ impl SipHandler {
         if let Some(exp) = request.expires_header() {
             if let Ok(seconds) = exp.seconds() {
                 if 0 == seconds {
-                    store_engine.unregister(&gb_code);
+                    self.store.unregister(&gb_code);
                 } else {
                     is_register = true;
                     let branch = request
@@ -96,14 +71,14 @@ impl SipHandler {
                         .branch()
                         .unwrap()
                         .to_string();
-                    store_engine.register(&branch, &gb_code, client_addr);
+                    self.store.register(&branch, &gb_code, client_addr);
                 }
             }
         }
 
         let mut headers: sip_rs::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
-        headers.push(Self::from_old(&request, &self.id, &self.domain).into());
+        headers.push(self.from_old(&request).into());
         headers.push(self.to_old(&request).into());
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
@@ -116,20 +91,13 @@ impl SipHandler {
             body: Default::default(),
         };
 
-        Self::socket_send_response_lite(&sip_socket, client_addr, response).await;
+        self.socket_send_response_lite(client_addr, response).await;
 
         if is_register {
-            Self::query_device_status(
-                &store_engine,
-                sip_socket,
+            self.query_device_status(
                 client_addr,
-                &self.ip,
-                self.port,
-                &self.id,
-                &self.domain,
                 &Self::branch_get(&request),
                 gb_code,
-                &self.call_id,
             )
             .await;
         }

@@ -17,37 +17,27 @@ pub mod update;
 
 use std::net::SocketAddr;
 
-use rsip::{self as sip_rs, prelude::{HasHeaders, HeadersExt, ToTypedHeader}};
+use rsip::{
+    self as sip_rs,
+    prelude::{HasHeaders, HeadersExt, ToTypedHeader},
+};
 
-use tokio;
-
-use crate::store::base::StoreEngine;
 use crate::utils::ansi_color as Color;
 
 const RESPONSE_PREFIX: [u8; 3] = [b'S', b'I', b'P'];
 
 impl SipHandler {
-    pub async fn dispatch(
-        &mut self,
-        store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
-        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
-        client_addr: SocketAddr,
-        sip_data: &[u8],
-    ) {
-        if sip_data.len() > RESPONSE_PREFIX.len() && sip_data[..RESPONSE_PREFIX.len()] == RESPONSE_PREFIX {
-            self.dispatch_response(store_engine, sip_socket, client_addr, sip_data).await;
+    pub async fn dispatch(&self, client_addr: SocketAddr, sip_data: &[u8]) {
+        if sip_data.len() > RESPONSE_PREFIX.len()
+            && sip_data[..RESPONSE_PREFIX.len()] == RESPONSE_PREFIX
+        {
+            self.dispatch_response(client_addr, sip_data).await;
         } else {
-            self.dispatch_request(store_engine, sip_socket, client_addr, sip_data).await;
+            self.dispatch_request(client_addr, sip_data).await;
         }
     }
 
-    pub async fn dispatch_request(
-        &mut self,
-        store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
-        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
-        client_addr: SocketAddr,
-        sip_data: &[u8],
-    ) {
+    pub async fn dispatch_request(&self, client_addr: SocketAddr, sip_data: &[u8]) {
         match sip_rs::Request::try_from(sip_data) {
             Err(e) => {
                 tracing::error!(
@@ -81,81 +71,33 @@ impl SipHandler {
                 let seq = request.cseq_header().unwrap().typed().unwrap().seq;
                 if seq > 0 {
                     if request.method() == &sip_rs::Method::Register {
-                        store_engine.set_register_sequence(seq);
+                        self.store.set_register_sequence(seq);
                     } else {
-                        store_engine.set_global_sequence(seq);
+                        self.store.set_global_sequence(seq);
                     }
                 }
 
                 match request.method() {
-                    sip_rs::Method::Register => {
-                        self.on_register(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Ack => {
-                        self.on_ack(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Bye => {
-                        self.on_bye(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Cancel => {
-                        self.on_cancel(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Info => {
-                        self.on_info(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Invite => {
-                        self.on_invite(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Message => {
-                        self.on_message(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Notify => {
-                        self.on_notify(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Options => {
-                        self.on_options(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::PRack => {
-                        self.on_prack(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Publish => {
-                        self.on_publish(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Refer => {
-                        self.on_refer(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Subscribe => {
-                        self.on_subscribe(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
-                    sip_rs::Method::Update => {
-                        self.on_update(store_engine, sip_socket.clone(), client_addr, request)
-                            .await
-                    }
+                    sip_rs::Method::Register => self.on_register(client_addr, request).await,
+                    sip_rs::Method::Ack => self.on_ack(client_addr, request).await,
+                    sip_rs::Method::Bye => self.on_bye(client_addr, request).await,
+                    sip_rs::Method::Cancel => self.on_cancel(client_addr, request).await,
+                    sip_rs::Method::Info => self.on_info(client_addr, request).await,
+                    sip_rs::Method::Invite => self.on_invite(client_addr, request).await,
+                    sip_rs::Method::Message => self.on_message(client_addr, request).await,
+                    sip_rs::Method::Notify => self.on_notify(client_addr, request).await,
+                    sip_rs::Method::Options => self.on_options(client_addr, request).await,
+                    sip_rs::Method::PRack => self.on_prack(client_addr, request).await,
+                    sip_rs::Method::Publish => self.on_publish(client_addr, request).await,
+                    sip_rs::Method::Refer => self.on_refer(client_addr, request).await,
+                    sip_rs::Method::Subscribe => self.on_subscribe(client_addr, request).await,
+                    sip_rs::Method::Update => self.on_update(client_addr, request).await,
                 };
             }
         };
     }
 
-    pub async fn dispatch_response(
-        &mut self,
-        store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
-        sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
-        client_addr: SocketAddr,
-        sip_data: &[u8],
-    ) {
+    pub async fn dispatch_response(&self, client_addr: SocketAddr, sip_data: &[u8]) {
         match sip_rs::Response::try_from(sip_data) {
             Err(e) => {
                 tracing::error!(

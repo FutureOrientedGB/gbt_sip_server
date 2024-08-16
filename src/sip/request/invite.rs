@@ -1,20 +1,12 @@
-use rsip as sip_rs;
-use rsip::prelude::UntypedHeader;
-use tokio;
+use rsip::{self as sip_rs, prelude::UntypedHeader};
 
 use crate::sip::handler::SipHandler;
-use crate::store::base::StoreEngine;
 use crate::{sip, version};
 
 impl SipHandler {
     pub async fn invite_device(
-        store_engine: &std::sync::Arc<Box<dyn StoreEngine>>,
-        sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
+        self,
         device_addr: std::net::SocketAddr,
-        ip: &String,
-        port: u16,
-        id: &String,
-        domain: &String,
         branch: &String,
         call_id: &String,
         media_server_ip: &String,
@@ -37,30 +29,33 @@ impl SipHandler {
 
         // headers
         let mut headers: sip_rs::Headers = Default::default();
-        headers.push(Self::via(ip, port, branch).into());
+        headers.push(self.via(branch).into());
         headers.push(sip_rs::headers::MaxForwards::default().into());
-        headers.push(Self::from_new(id, domain).into());
-        headers.push(Self::to_new(gb_code, domain).into());
-        headers.push(sip_rs::headers::Contact::new(format!(
-            "<sip:{}@{}:{}>",
-            id, ip, port
-        )).into());
-        headers.push(sip_rs::headers::CallId::from(format!("{}@{}", call_id, ip)).into());
+        headers.push(self.from_new().into());
+        headers.push(self.to_new(gb_code).into());
+        headers.push(
+            sip_rs::headers::Contact::new(format!("<sip:{}@{}:{}>", self.id, self.ip, self.port))
+                .into(),
+        );
+        headers.push(sip_rs::headers::CallId::from(format!("{}@{}", call_id, self.ip)).into());
         headers.push(
             sip_rs::typed::CSeq {
-                seq: store_engine.add_fetch_global_sequence(),
+                seq: self.store.add_fetch_global_sequence(),
                 method: sip_rs::Method::Invite,
             }
             .into(),
         );
-        headers.push(sip_rs::headers::typed::Allow::from(vec![
-            sip_rs::common::Method::Invite,
-            sip_rs::common::Method::Ack,
-            sip_rs::common::Method::Bye,
-            sip_rs::common::Method::Cancel,
-            sip_rs::common::Method::Update,
-            sip_rs::common::Method::PRack,
-        ]).into());
+        headers.push(
+            sip_rs::headers::typed::Allow::from(vec![
+                sip_rs::common::Method::Invite,
+                sip_rs::common::Method::Ack,
+                sip_rs::common::Method::Bye,
+                sip_rs::common::Method::Cancel,
+                sip_rs::common::Method::Update,
+                sip_rs::common::Method::PRack,
+            ])
+            .into(),
+        );
         headers.push(sip_rs::headers::Supported::from(String::from("100rel")).into());
         headers.push(sip_rs::headers::Subject::from(format!("{gb_code}:0")).into());
         headers.push(
@@ -80,7 +75,7 @@ impl SipHandler {
             uri: sip_rs::Uri {
                 scheme: Some(sip_rs::Scheme::Sip),
                 auth: Some((gb_code.clone(), Option::<String>::None).into()),
-                host_with_port: sip_rs::Domain::from(domain.clone()).into(),
+                host_with_port: sip_rs::Domain::from(self.domain.clone()).into(),
                 ..Default::default()
             },
             version: sip_rs::Version::V2,
@@ -88,13 +83,8 @@ impl SipHandler {
             body: Default::default(),
         };
 
-        return Self::socket_send_request_heavy(
-            sip_socket,
-            device_addr,
-            request,
-            bin_body,
-            str_body,
-        )
-        .await;
+        return self
+            .socket_send_request_heavy(device_addr, request, bin_body, str_body)
+            .await;
     }
 }

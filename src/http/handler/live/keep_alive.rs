@@ -2,16 +2,17 @@ use actix_web::{post, web, Responder};
 
 use crate::{
     http::message::live::keep_alive::{LiveKeepAliveRequest, LiveKeepAliveResponse},
-    store::base::StoreEngine,
+    sip::handler::SipHandler,
 };
 
 #[post("/live/keep_alive")]
 async fn post_keep_alive(
     data: web::Json<LiveKeepAliveRequest>,
-    _sip_socket: web::Data<std::sync::Arc<tokio::net::UdpSocket>>,
-    store_engine: web::Data<std::sync::Arc<Box<dyn StoreEngine>>>,
+    sip_handler: web::Data<std::sync::Arc<SipHandler>>,
 ) -> impl Responder {
-    store_engine.stream_keep_alive(&data.gb_code, data.stream_id);
+    sip_handler
+        .store
+        .stream_keep_alive(&data.gb_code, data.stream_id);
 
     let result = LiveKeepAliveResponse {
         locate: format!("{}#L{}", file!(), line!()),

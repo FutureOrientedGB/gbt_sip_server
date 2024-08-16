@@ -2,16 +2,15 @@ use actix_web::{post, web, Responder};
 
 use crate::{
     http::message::live::play::{LivePlayRequest, LivePlayResponse},
-    store::base::StoreEngine,
+    sip::handler::SipHandler,
 };
 
 #[post("/live/play")]
 async fn post_play(
     data: web::Json<LivePlayRequest>,
-    _sip_socket: web::Data<std::sync::Arc<tokio::net::UdpSocket>>,
-    store_engine: web::Data<std::sync::Arc<Box<dyn StoreEngine>>>,
+    sip_handler: web::Data<std::sync::Arc<SipHandler>>,
 ) -> impl Responder {
-    let (not_found, is_playing, stream_id) = store_engine.invite(&data.gb_code, true);
+    let (not_found, is_playing, stream_id) = sip_handler.store.invite(&data.gb_code, true);
 
     let (mut code, mut msg) = (200, "OK");
     if not_found {

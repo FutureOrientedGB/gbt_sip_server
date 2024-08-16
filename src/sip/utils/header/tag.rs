@@ -9,7 +9,7 @@ static CHARSET: [char; 16] = [
 ];
 
 impl SipHandler {
-    pub fn tag_new(length: usize) -> String {
+    pub fn tag_new(&self, length: usize) -> String {
         let mut rng = rand::thread_rng();
         std::iter::repeat(())
             .take(length)
@@ -20,7 +20,7 @@ impl SipHandler {
             .collect()
     }
 
-    pub fn tag_get(request: &sip_rs::Request) -> String {
+    pub fn tag_get(&self, request: &sip_rs::Request) -> String {
         if let Ok(f) = request.from_header() {
             if let Ok(t) = f.tag() {
                 if let Some(tag) = t {
