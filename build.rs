@@ -1,27 +1,27 @@
-use std::fs;
-use std::process::Command;
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use regex::Regex;
 
 use walkdir::WalkDir;
 
 fn main() {
-    // write timestamp.txt to trigger build.rs
-    let timestamp_file = "timestamp.txt";
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
-    let timestamp = now.as_secs();
-    fs::write(timestamp_file, timestamp.to_string()).expect("Unable to write file");
-
-    println!("cargo:rerun-if-changed={}", timestamp_file);
+    trigger_build_every_time();
 
     replace_version_in_rs(
         "true" == std::env::var("UPDATE_ALL_FILES").unwrap_or(String::from("false").to_lowercase()),
     );
+}
 
-    fs::remove_file(timestamp_file).unwrap();
+fn trigger_build_every_time() {
+    // write build_number.txt to trigger build.rs
+    let build_number_file = format!("{}/build_number.txt", std::env::var("OUT_DIR").unwrap());
+    let count = if !std::path::Path::new(&build_number_file).exists() {
+        1
+    } else {
+        let content = std::fs::read_to_string(&build_number_file).unwrap();
+        content.parse::<u32>().unwrap_or(0) + 1
+    };
+    std::fs::write(&build_number_file, count.to_string()).expect("Unable to write file");
+
+    println!("cargo:rerun-if-changed={}", build_number_file);
 }
 
 fn replace_version_in_rs(update_all_files: bool) {
@@ -44,24 +44,24 @@ fn replace_version_in_rs(update_all_files: bool) {
             text += "\n";
             text += &version_replacement.to_string();
             text += "\n";
-            fs::write(&file, text).expect("fs::write error");
+            std::fs::write(&file, text).expect("std::fs::write error");
         }
         vec![file]
     };
     for file in files {
         println!("file: {}", &file);
-        let original_content = fs::read_to_string(&file).expect("Failed to read file");
+        let original_content = std::fs::read_to_string(&file).expect("Failed to read file");
         let replaced_content = version_regex.replace_all(&original_content, &version_replacement);
         if original_content != replaced_content {
-            println!("fs::write, file: {}, version: {}", &file, &latest_version);
-            fs::write(&file, replaced_content.as_ref()).expect("fs::write error");
+            println!("std::fs::write, file: {}, version: {}", &file, &latest_version);
+            std::fs::write(&file, replaced_content.as_ref()).expect("std::fs::write error");
         }
     }
 }
 
 fn get_latest_git_commit_hash(short: bool) -> String {
     // Run Git command to get the latest commit hash
-    let output = Command::new("git")
+    let output = std::process::Command::new("git")
         .args(&[
             "log",
             "-1",
@@ -72,17 +72,17 @@ fn get_latest_git_commit_hash(short: bool) -> String {
             },
         ])
         .output()
-        .expect("Command::new(git log) error");
+        .expect("std::process::Command::new(git log) error");
 
     return String::from_utf8_lossy(&output.stdout).trim().to_string();
 }
 
 fn get_latest_git_commit_time() -> String {
     // Run Git command to get the latest commit hash
-    let output = Command::new("git")
+    let output = std::process::Command::new("git")
         .args(&["log", "-1", "--format=%ad", "--date=format:%Y%m%d.%H%M%S"])
         .output()
-        .expect("Command::new(git log) error");
+        .expect("std::process::Command::new(git log) error");
 
     return String::from_utf8_lossy(&output.stdout).trim().to_string();
 }
