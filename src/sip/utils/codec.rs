@@ -1,12 +1,10 @@
 use encoding_rs;
 
-use rsip;
-
 use tracing;
 
-use crate::sip::handler::base::SipRequestHandler;
+use crate::sip::handler::base::SipHandler;
 
-impl SipRequestHandler {
+impl SipHandler {
     pub fn decode_body(data: &Vec<u8>) -> String {
         let (body, _encoding, has_error) = encoding_rs::GB18030.decode(data);
         if has_error {

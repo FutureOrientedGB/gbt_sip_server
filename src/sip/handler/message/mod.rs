@@ -3,18 +3,18 @@ pub mod on_keep_alive;
 
 use regex::Regex;
 
-use rsip;
+use rsip as sip_rs;
 
-use crate::sip::handler::base::SipRequestHandler;
+use crate::sip::handler::base::SipHandler;
 use crate::store::base::StoreEngine;
 
-impl SipRequestHandler {
+impl SipHandler {
     pub async fn on_message(
         &mut self,
         store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
         sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
         client_addr: std::net::SocketAddr,
-        request: rsip::Request,
+        request: sip_rs::Request,
     ) {
         // decode body
         let msg = Self::decode_body(request.body());

@@ -1,14 +1,14 @@
 use rand::Rng;
 
-use rsip::{self, prelude::HeadersExt};
+use rsip::{self as sip_rs, prelude::HeadersExt};
 
-use crate::sip::handler::base::SipRequestHandler;
+use crate::sip::handler::base::SipHandler;
 
 static CHARSET: [char; 16] = [
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
 ];
 
-impl SipRequestHandler {
+impl SipHandler {
     pub fn tag_new(length: usize) -> String {
         let mut rng = rand::thread_rng();
         std::iter::repeat(())
@@ -20,7 +20,7 @@ impl SipRequestHandler {
             .collect()
     }
 
-    pub fn tag_get(request: &rsip::Request) -> String {
+    pub fn tag_get(request: &sip_rs::Request) -> String {
         if let Ok(f) = request.from_header() {
             if let Ok(t) = f.tag() {
                 if let Some(tag) = t {

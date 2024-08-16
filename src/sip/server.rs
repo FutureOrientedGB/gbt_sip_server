@@ -1,6 +1,6 @@
 use tokio;
 
-use crate::sip::handler::SipRequestHandler;
+use crate::sip::handler::SipHandler;
 use crate::store::base::StoreEngine;
 use crate::utils::cli::CommandLines;
 
@@ -31,7 +31,7 @@ pub async fn run_forever(
     store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
 ) -> Result<(), std::io::Error> {
     let mut recv_buff = [0; MAX_UDP_SIZE];
-    let mut sip_handler = SipRequestHandler::new(&cli_args);
+    let mut sip_handler = SipHandler::new(&cli_args);
 
     loop {
         match sip_socket.clone().recv_from(&mut recv_buff).await {

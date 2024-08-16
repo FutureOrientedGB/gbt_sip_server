@@ -1,6 +1,5 @@
 pub mod base;
-pub use base::SipRequestHandler;
-use rsip::prelude::{HeadersExt, ToTypedHeader};
+pub use base::SipHandler;
 pub mod ack;
 pub mod bye;
 pub mod cancel;
@@ -18,16 +17,16 @@ pub mod update;
 
 use std::net::SocketAddr;
 
-use rsip::{self, prelude::HasHeaders};
+use rsip::{self as sip_rs, prelude::{HasHeaders, HeadersExt, ToTypedHeader}};
 
 use tokio;
 
 use crate::store::base::StoreEngine;
 use crate::utils::ansi_color as Color;
 
-const INVALID_PREFIX: [u8; 3] = [b'S', b'I', b'P'];
+const RESPONSE_PREFIX: [u8; 3] = [b'S', b'I', b'P'];
 
-impl SipRequestHandler {
+impl SipHandler {
     pub async fn dispatch(
         &mut self,
         store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
@@ -35,7 +34,7 @@ impl SipRequestHandler {
         client_addr: SocketAddr,
         sip_data: &[u8],
     ) {
-        if sip_data.len() > INVALID_PREFIX.len() && sip_data[..INVALID_PREFIX.len()] == INVALID_PREFIX {
+        if sip_data.len() > RESPONSE_PREFIX.len() && sip_data[..RESPONSE_PREFIX.len()] == RESPONSE_PREFIX {
             self.dispatch_response(store_engine, sip_socket, client_addr, sip_data).await;
         } else {
             self.dispatch_request(store_engine, sip_socket, client_addr, sip_data).await;
@@ -49,10 +48,10 @@ impl SipRequestHandler {
         client_addr: SocketAddr,
         sip_data: &[u8],
     ) {
-        match rsip::Request::try_from(sip_data) {
+        match sip_rs::Request::try_from(sip_data) {
             Err(e) => {
                 tracing::error!(
-                    "{}rsip::Request::try_from error, e: {}, {}request: {}",
+                    "{}sip_rs::Request::try_from error, e: {}, {}request: {}",
                     Color::RED,
                     e,
                     Color::RESET,
@@ -81,7 +80,7 @@ impl SipRequestHandler {
 
                 let seq = request.cseq_header().unwrap().typed().unwrap().seq;
                 if seq > 0 {
-                    if request.method() == &rsip::Method::Register {
+                    if request.method() == &sip_rs::Method::Register {
                         store_engine.set_register_sequence(seq);
                     } else {
                         store_engine.set_global_sequence(seq);
@@ -89,59 +88,59 @@ impl SipRequestHandler {
                 }
 
                 match request.method() {
-                    rsip::Method::Register => {
+                    sip_rs::Method::Register => {
                         self.on_register(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Ack => {
+                    sip_rs::Method::Ack => {
                         self.on_ack(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Bye => {
+                    sip_rs::Method::Bye => {
                         self.on_bye(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Cancel => {
+                    sip_rs::Method::Cancel => {
                         self.on_cancel(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Info => {
+                    sip_rs::Method::Info => {
                         self.on_info(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Invite => {
+                    sip_rs::Method::Invite => {
                         self.on_invite(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Message => {
+                    sip_rs::Method::Message => {
                         self.on_message(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Notify => {
+                    sip_rs::Method::Notify => {
                         self.on_notify(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Options => {
+                    sip_rs::Method::Options => {
                         self.on_options(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::PRack => {
+                    sip_rs::Method::PRack => {
                         self.on_prack(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Publish => {
+                    sip_rs::Method::Publish => {
                         self.on_publish(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Refer => {
+                    sip_rs::Method::Refer => {
                         self.on_refer(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Subscribe => {
+                    sip_rs::Method::Subscribe => {
                         self.on_subscribe(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
-                    rsip::Method::Update => {
+                    sip_rs::Method::Update => {
                         self.on_update(store_engine, sip_socket.clone(), client_addr, request)
                             .await
                     }
@@ -157,10 +156,10 @@ impl SipRequestHandler {
         client_addr: SocketAddr,
         sip_data: &[u8],
     ) {
-        match rsip::Response::try_from(sip_data) {
+        match sip_rs::Response::try_from(sip_data) {
             Err(e) => {
                 tracing::error!(
-                    "{}rsip::Request::try_from error, e: {}, {}response: {}",
+                    "{}sip_rs::Request::try_from error, e: {}, {}response: {}",
                     Color::RED,
                     e,
                     Color::RESET,

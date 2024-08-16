@@ -1,20 +1,20 @@
 use rsip::{
-    self,
+    self as sip_rs,
     prelude::{HeadersExt, ToTypedHeader},
 };
 
 use crate::{
-    sip::{self, handler::base::SipRequestHandler},
+    sip::handler::base::SipHandler,
     store::base::StoreEngine,
 };
 
-impl SipRequestHandler {
+impl SipHandler {
     pub async fn on_register(
         &mut self,
         store_engine: std::sync::Arc<Box<dyn StoreEngine>>,
         sip_socket: std::sync::Arc<tokio::net::UdpSocket>,
         client_addr: std::net::SocketAddr,
-        request: rsip::Request,
+        request: sip_rs::Request,
     ) {
         if let Some(auth) = request.authorization_header() {
             if let Ok(auth) = auth.typed() {
@@ -42,18 +42,18 @@ impl SipRequestHandler {
         _store_engine: &std::sync::Arc<Box<dyn StoreEngine>>,
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         client_addr: std::net::SocketAddr,
-        request: &rsip::Request,
+        request: &sip_rs::Request,
     ) {
-        let mut headers: rsip::Headers = Default::default();
+        let mut headers: sip_rs::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
         headers.push(Self::from_old(&request, &self.id, &self.domain).into());
         headers.push(self.to_old(&request).into());
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
-        headers.push(rsip::Header::ContentLength(Default::default()));
+        headers.push(sip_rs::Header::ContentLength(Default::default()));
 
         headers.push(
-            rsip::typed::WwwAuthenticate {
+            sip_rs::typed::WwwAuthenticate {
                 realm: self.realm.clone(),
                 nonce: self.nonce.clone(),
                 algorithm: Some(self.algorithm),
@@ -63,10 +63,10 @@ impl SipRequestHandler {
             .into(),
         );
 
-        let response = rsip::Response {
-            status_code: rsip::StatusCode::Unauthorized,
+        let response = sip_rs::Response {
+            status_code: sip_rs::StatusCode::Unauthorized,
             headers,
-            version: rsip::Version::V2,
+            version: sip_rs::Version::V2,
             body: Default::default(),
         };
 
@@ -78,7 +78,7 @@ impl SipRequestHandler {
         store_engine: &std::sync::Arc<Box<dyn StoreEngine>>,
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         client_addr: std::net::SocketAddr,
-        request: &rsip::Request,
+        request: &sip_rs::Request,
         gb_code: &String,
     ) {
         let mut is_register = false;
@@ -101,25 +101,25 @@ impl SipRequestHandler {
             }
         }
 
-        let mut headers: rsip::Headers = Default::default();
+        let mut headers: sip_rs::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
         headers.push(Self::from_old(&request, &self.id, &self.domain).into());
         headers.push(self.to_old(&request).into());
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
-        headers.push(rsip::Header::ContentLength(Default::default()));
+        headers.push(sip_rs::Header::ContentLength(Default::default()));
 
-        let response = rsip::Response {
-            status_code: rsip::StatusCode::OK,
+        let response = sip_rs::Response {
+            status_code: sip_rs::StatusCode::OK,
             headers,
-            version: rsip::Version::V2,
+            version: sip_rs::Version::V2,
             body: Default::default(),
         };
 
         Self::socket_send_response_lite(&sip_socket, client_addr, response).await;
 
         if is_register {
-            sip::request::message::device_status::query_device_status(
+            Self::query_device_status(
                 &store_engine,
                 sip_socket,
                 client_addr,

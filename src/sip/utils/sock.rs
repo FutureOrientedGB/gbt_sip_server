@@ -1,15 +1,15 @@
-use rsip;
+use rsip as sip_rs;
 use tokio;
 use tracing;
 
-use crate::sip::handler::SipRequestHandler;
+use crate::sip::handler::SipHandler;
 use crate::utils::ansi_color as Color;
 
-impl SipRequestHandler {
+impl SipHandler {
     pub async fn socket_send_request_lite(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
-        request: rsip::Request,
+        request: sip_rs::Request,
     ) -> bool {
         return Self::socket_send(
             sip_socket,
@@ -24,9 +24,9 @@ impl SipRequestHandler {
     pub async fn socket_send_request_heavy(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
-        request: rsip::Request,
+        request: sip_rs::Request,
         bin_body: Vec<u8>,
-        text_body: String,
+        str_body: String,
     ) -> bool {
         let mut request_data: Vec<u8> = vec![];
         request_data.extend(request.to_string().as_bytes());
@@ -35,7 +35,7 @@ impl SipRequestHandler {
             sip_socket,
             addr,
             request_data.as_slice(),
-            format!("{}{}", request.to_string(), text_body),
+            format!("{}{}", request.to_string(), str_body),
             "request",
         )
         .await;
@@ -44,7 +44,7 @@ impl SipRequestHandler {
     pub async fn socket_send_response_lite(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
-        response: rsip::Response,
+        response: sip_rs::Response,
     ) -> bool {
         return Self::socket_send(
             sip_socket,
@@ -59,9 +59,9 @@ impl SipRequestHandler {
     pub async fn socket_send_response_heavy(
         sip_socket: &std::sync::Arc<tokio::net::UdpSocket>,
         addr: std::net::SocketAddr,
-        response: rsip::Response,
+        response: sip_rs::Response,
         bin_body: Vec<u8>,
-        text_body: String,
+        str_body: String,
     ) -> bool {
         let mut response_data: Vec<u8> = vec![];
         response_data.extend(response.to_string().as_bytes());
@@ -70,7 +70,7 @@ impl SipRequestHandler {
             sip_socket,
             addr,
             response_data.as_slice(),
-            format!("{}{}", response.to_string(), text_body),
+            format!("{}{}", response.to_string(), str_body),
             "response",
         )
         .await;
