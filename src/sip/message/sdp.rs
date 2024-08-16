@@ -7,6 +7,8 @@ use vec1::vec1;
 pub enum SdpSessionType {
     Play,
     Playback,
+    Download,
+    Talk,
 }
 
 impl ToString for SdpSessionType {
@@ -14,8 +16,26 @@ impl ToString for SdpSessionType {
         match &self {
             &Self::Play => String::from("Play"),
             &Self::Playback => String::from("Playback"),
+            &Self::Download => String::from("Download"),
+            &Self::Talk => String::from("Talk"),
         }
     }
+}
+
+impl FromStr for SdpSessionType {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Play" => Ok(Self::Play),
+            "Playback" => Ok(Self::Playback),
+            "Download" => Ok(Self::Download),
+            "Talk" => Ok(Self::Talk),
+            _ => {
+                Err(String::from("Support lists: Play, Playback, Download, Talk"))
+            }
+        }
+    }
+
+    type Err = String;
 }
 
 pub fn generate_media_sdp(
@@ -67,19 +87,15 @@ pub fn generate_media_sdp(
             },
         ],
         info: None,
-        connections: vec![
-            sdp_rs::lines::Connection {
-                nettype: sdp_rs::lines::common::Nettype::In,
-                addrtype: sdp_rs::lines::common::Addrtype::Ip4,
-                connection_address: sdp_rs::lines::connection::ConnectionAddress {
-                    base: std::net::IpAddr::V4(
-                        std::net::Ipv4Addr::from_str(media_server_ip).unwrap(),
-                    ),
-                    ttl: None,
-                    numaddr: None
-                },
-            }
-        ],
+        connections: vec![sdp_rs::lines::Connection {
+            nettype: sdp_rs::lines::common::Nettype::In,
+            addrtype: sdp_rs::lines::common::Addrtype::Ip4,
+            connection_address: sdp_rs::lines::connection::ConnectionAddress {
+                base: std::net::IpAddr::V4(std::net::Ipv4Addr::from_str(media_server_ip).unwrap()),
+                ttl: None,
+                numaddr: None,
+            },
+        }],
         bandwidths: vec![],
         key: None,
     };
@@ -99,13 +115,14 @@ pub fn generate_media_sdp(
         session_name: sdp_rs::lines::SessionName::new(session_type.to_string()),
         session_info: None,
         uri: None,
-        times: vec1![
-            sdp_rs::Time {
-                active: sdp_rs::lines::Active{start: start_ts, stop: stop_ts},
-                repeat: vec![],
-                zone: None,
-            }
-        ],
+        times: vec1![sdp_rs::Time {
+            active: sdp_rs::lines::Active {
+                start: start_ts,
+                stop: stop_ts
+            },
+            repeat: vec![],
+            zone: None,
+        }],
         media_descriptions: vec![media_desc],
         attributes: vec![],
         emails: vec![],
