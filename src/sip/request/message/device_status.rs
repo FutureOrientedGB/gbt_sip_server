@@ -4,7 +4,7 @@ use crate::sip::handler::SipHandler;
 use crate::{sip, version};
 
 impl SipHandler {
-    pub async fn query_device_status(
+    pub async fn send_device_status_query(
         &self,
         device_addr: std::net::SocketAddr,
         branch: &String,
@@ -54,7 +54,7 @@ impl SipHandler {
             body: Default::default(),
         };
 
-        return self.socket_send_request_heavy(
+        return self.socket_send_request_with_body(
             device_addr,
             request,
             bin_body,

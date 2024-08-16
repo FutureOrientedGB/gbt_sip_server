@@ -78,20 +78,20 @@ impl SipHandler {
                 }
 
                 match request.method() {
-                    sip_rs::Method::Register => self.on_register(client_addr, request).await,
-                    sip_rs::Method::Ack => self.on_ack(client_addr, request).await,
-                    sip_rs::Method::Bye => self.on_bye(client_addr, request).await,
-                    sip_rs::Method::Cancel => self.on_cancel(client_addr, request).await,
-                    sip_rs::Method::Info => self.on_info(client_addr, request).await,
-                    sip_rs::Method::Invite => self.on_invite(client_addr, request).await,
-                    sip_rs::Method::Message => self.on_message(client_addr, request).await,
-                    sip_rs::Method::Notify => self.on_notify(client_addr, request).await,
-                    sip_rs::Method::Options => self.on_options(client_addr, request).await,
-                    sip_rs::Method::PRack => self.on_prack(client_addr, request).await,
-                    sip_rs::Method::Publish => self.on_publish(client_addr, request).await,
-                    sip_rs::Method::Refer => self.on_refer(client_addr, request).await,
-                    sip_rs::Method::Subscribe => self.on_subscribe(client_addr, request).await,
-                    sip_rs::Method::Update => self.on_update(client_addr, request).await,
+                    sip_rs::Method::Register => self.on_req_register(client_addr, request).await,
+                    sip_rs::Method::Ack => self.on_req_ack(client_addr, request).await,
+                    sip_rs::Method::Bye => self.on_req_bye(client_addr, request).await,
+                    sip_rs::Method::Cancel => self.on_req_cancel(client_addr, request).await,
+                    sip_rs::Method::Info => self.on_req_info(client_addr, request).await,
+                    sip_rs::Method::Invite => self.on_req_invite(client_addr, request).await,
+                    sip_rs::Method::Message => self.on_req_message(client_addr, request).await,
+                    sip_rs::Method::Notify => self.on_req_notify(client_addr, request).await,
+                    sip_rs::Method::Options => self.on_req_options(client_addr, request).await,
+                    sip_rs::Method::PRack => self.on_req_prack(client_addr, request).await,
+                    sip_rs::Method::Publish => self.on_req_publish(client_addr, request).await,
+                    sip_rs::Method::Refer => self.on_req_refer(client_addr, request).await,
+                    sip_rs::Method::Subscribe => self.on_req_subscribe(client_addr, request).await,
+                    sip_rs::Method::Update => self.on_req_update(client_addr, request).await,
                 };
             }
         };
@@ -124,6 +124,27 @@ impl SipHandler {
                         Self::decode_body(response.body())
                     )
                 );
+
+                if let Ok(seq) = response.cseq_header() {
+                    if let Ok(method) = seq.method() {
+                        match method {
+                            sip_rs::Method::Register => self.on_rsp_register(client_addr, response).await,
+                            sip_rs::Method::Ack => self.on_rsp_ack(client_addr, response).await,
+                            sip_rs::Method::Bye => self.on_rsp_bye(client_addr, response).await,
+                            sip_rs::Method::Cancel => self.on_rsp_cancel(client_addr, response).await,
+                            sip_rs::Method::Info => self.on_rsp_info(client_addr, response).await,
+                            sip_rs::Method::Invite => self.on_rsp_invite(client_addr, response).await,
+                            sip_rs::Method::Message => self.on_rsp_message(client_addr, response).await,
+                            sip_rs::Method::Notify => self.on_rsp_notify(client_addr, response).await,
+                            sip_rs::Method::Options => self.on_rsp_options(client_addr, response).await,
+                            sip_rs::Method::PRack => self.on_rsp_prack(client_addr, response).await,
+                            sip_rs::Method::Publish => self.on_rsp_publish(client_addr, response).await,
+                            sip_rs::Method::Refer => self.on_rsp_refer(client_addr, response).await,
+                            sip_rs::Method::Subscribe => self.on_rsp_subscribe(client_addr, response).await,
+                            sip_rs::Method::Update => self.on_rsp_update(client_addr, response).await,
+                        }
+                    }
+                }
             }
         }
     }

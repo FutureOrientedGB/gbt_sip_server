@@ -8,7 +8,11 @@ use rsip as sip_rs;
 use crate::sip::handler::base::SipHandler;
 
 impl SipHandler {
-    pub async fn on_message(&self, client_addr: std::net::SocketAddr, request: sip_rs::Request) {
+    pub async fn on_req_message(
+        &self,
+        client_addr: std::net::SocketAddr,
+        request: sip_rs::Request,
+    ) {
         // decode body
         let msg = Self::decode_body(request.body());
 
@@ -23,6 +27,14 @@ impl SipHandler {
             }
             _ => {}
         }
+    }
+
+    pub async fn on_rsp_message(
+        &self,
+        _client_addr: std::net::SocketAddr,
+        _response: sip_rs::Response,
+    ) {
+        let i = 0;
     }
 
     fn extract_cmd_type(&self, body: &String) -> String {

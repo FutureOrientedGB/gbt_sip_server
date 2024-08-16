@@ -18,7 +18,7 @@ pub trait StoreEngine: Send + Sync {
     fn unregister(&self, gb_code: &String) -> bool;
     fn register_keep_alive(&self, gb_code: &String) -> bool;
 
-    fn invite(&self, gb_code: &String, is_live: bool) -> (bool, bool, u32);
+    fn invite(&self, gb_code: &String, is_live: bool) -> (bool, bool, u32, std::net::SocketAddr, String);
     fn bye(&self, gb_code: &String, stream_id: u32) -> bool;
     fn stream_keep_alive(&self, gb_code: &String, stream_id: u32) -> bool;
 

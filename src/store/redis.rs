@@ -72,8 +72,21 @@ impl StoreEngine for RedisStore {
         return false;
     }
 
-    fn invite(&self, _gb_code: &String, _is_live: bool) -> (bool, bool, u32) {
-        return (false, false, 0);
+    fn invite(
+        &self,
+        _gb_code: &String,
+        _is_live: bool,
+    ) -> (bool, bool, u32, std::net::SocketAddr, String) {
+        return (
+            false,
+            false,
+            0,
+            std::net::SocketAddr::new(
+                std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)),
+                8080,
+            ),
+            String::new(),
+        );
     }
 
     fn bye(&self, _gb_code: &String, _stream_id: u32) -> bool {

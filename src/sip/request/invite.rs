@@ -4,11 +4,10 @@ use crate::sip::handler::SipHandler;
 use crate::{sip, version};
 
 impl SipHandler {
-    pub async fn invite_device(
-        self,
+    pub async fn send_invite(
+        &self,
         device_addr: std::net::SocketAddr,
         branch: &String,
-        call_id: &String,
         media_server_ip: &String,
         media_server_port: u16,
         session_type: sip::message::SdpSessionType,
@@ -37,7 +36,7 @@ impl SipHandler {
             sip_rs::headers::Contact::new(format!("<sip:{}@{}:{}>", self.id, self.ip, self.port))
                 .into(),
         );
-        headers.push(sip_rs::headers::CallId::from(format!("{}@{}", call_id, self.ip)).into());
+        headers.push(sip_rs::headers::CallId::from(format!("{}@{}", self.call_id, self.ip)).into());
         headers.push(
             sip_rs::typed::CSeq {
                 seq: self.store.add_fetch_global_sequence(),
@@ -71,7 +70,7 @@ impl SipHandler {
 
         // request
         let request = sip_rs::Request {
-            method: sip_rs::Method::Message,
+            method: sip_rs::Method::Invite,
             uri: sip_rs::Uri {
                 scheme: Some(sip_rs::Scheme::Sip),
                 auth: Some((gb_code.clone(), Option::<String>::None).into()),
@@ -84,7 +83,7 @@ impl SipHandler {
         };
 
         return self
-            .socket_send_request_heavy(device_addr, request, bin_body, str_body)
+            .socket_send_request_with_body(device_addr, request, bin_body, str_body)
             .await;
     }
 }

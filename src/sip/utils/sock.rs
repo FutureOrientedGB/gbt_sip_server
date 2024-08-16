@@ -5,7 +5,7 @@ use crate::sip::handler::SipHandler;
 use crate::utils::ansi_color as Color;
 
 impl SipHandler {
-    pub async fn socket_send_request_lite(
+    pub async fn socket_send_request(
         &self,
         addr: std::net::SocketAddr,
         request: sip_rs::Request,
@@ -20,7 +20,7 @@ impl SipHandler {
             .await;
     }
 
-    pub async fn socket_send_request_heavy(
+    pub async fn socket_send_request_with_body(
         &self,
         addr: std::net::SocketAddr,
         request: sip_rs::Request,
@@ -40,7 +40,7 @@ impl SipHandler {
             .await;
     }
 
-    pub async fn socket_send_response_lite(
+    pub async fn socket_send_response(
         &self,
         addr: std::net::SocketAddr,
         response: sip_rs::Response,
@@ -55,7 +55,7 @@ impl SipHandler {
             .await;
     }
 
-    pub async fn socket_send_response_heavy(
+    pub async fn socket_send_response_with_body(
         &self,
         addr: std::net::SocketAddr,
         response: sip_rs::Response,

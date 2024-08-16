@@ -162,10 +162,21 @@ impl StoreEngine for MemoryStore {
         return false;
     }
 
-    fn invite(&self, gb_code: &String, is_live: bool) -> (bool, bool, u32) {
-        if self.find_device_by_gb_code(gb_code).is_none() {
-            return (false, false, 0);
+    fn invite(&self, gb_code: &String, is_live: bool) -> (bool, bool, u32, std::net::SocketAddr, String) {
+        let result = self.find_device_by_gb_code(gb_code);
+        if result.is_none() {
+            return (
+                false,
+                false,
+                0,
+                std::net::SocketAddr::new(
+                    std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)),
+                    8080,
+                ),
+                String::new(),
+            );
         }
+        let (branch, device_addr) = result.unwrap();
 
         let stream_id = if is_live {
             self.live_stream_id
@@ -192,7 +203,7 @@ impl StoreEngine for MemoryStore {
             .unwrap()
             .insert(gb_code.clone(), stream_id);
 
-        return (true, is_playing, stream_id);
+        return (true, is_playing, stream_id, device_addr, branch);
     }
 
     fn bye(&self, _gb_code: &String, stream_id: u32) -> bool {

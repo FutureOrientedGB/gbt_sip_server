@@ -67,7 +67,19 @@ pub fn generate_media_sdp(
             },
         ],
         info: None,
-        connections: vec![],
+        connections: vec![
+            sdp_rs::lines::Connection {
+                nettype: sdp_rs::lines::common::Nettype::In,
+                addrtype: sdp_rs::lines::common::Addrtype::Ip4,
+                connection_address: sdp_rs::lines::connection::ConnectionAddress {
+                    base: std::net::IpAddr::V4(
+                        std::net::Ipv4Addr::from_str(media_server_ip).unwrap(),
+                    ),
+                    ttl: None,
+                    numaddr: None
+                },
+            }
+        ],
         bandwidths: vec![],
         key: None,
     };
@@ -95,16 +107,12 @@ pub fn generate_media_sdp(
             }
         ],
         media_descriptions: vec![media_desc],
-        attributes: vec![sdp_rs::lines::Attribute::Other {
-            0: String::from("y"),
-            1: Some(String::from("0100000001")),
-        }],
+        attributes: vec![],
         emails: vec![],
         phones: vec![],
         connection: None,
         bandwidths: vec![],
         key: None,
-       
     };
 
     session_desc.to_string()

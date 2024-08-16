@@ -2,7 +2,7 @@ use actix_web::{post, web, Responder};
 
 use crate::{
     http::message::live::play::{LivePlayRequest, LivePlayResponse},
-    sip::handler::SipHandler,
+    sip::{self, handler::SipHandler},
 };
 
 #[post("/live/play")]
@@ -10,7 +10,8 @@ async fn post_play(
     data: web::Json<LivePlayRequest>,
     sip_handler: web::Data<std::sync::Arc<SipHandler>>,
 ) -> impl Responder {
-    let (not_found, is_playing, stream_id) = sip_handler.store.invite(&data.gb_code, true);
+    let (not_found, is_playing, stream_id, device_addr, branch) =
+        sip_handler.store.invite(&data.gb_code, true);
 
     let (mut code, mut msg) = (200, "OK");
     if not_found {
@@ -19,9 +20,19 @@ async fn post_play(
 
     if is_playing {
         // dispatch
-    } else {
-        // invite ipc device
     }
+    sip_handler
+        .send_invite(
+            device_addr,
+            &branch,
+            &String::from("127.0.0.1"),
+            12345,
+            sip::message::sdp::SdpSessionType::Play,
+            &data.gb_code,
+            0,
+            0,
+        )
+        .await;
 
     let result = LivePlayResponse {
         locate: format!("{}#L{}", file!(), line!()),
