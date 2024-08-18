@@ -4,6 +4,7 @@ use serde_xml_rs::{from_str, to_string};
 use tracing;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename = "Notify")]
 pub struct KeepAlive {
     #[serde(rename = "CmdType")]
     pub cmd_type: String,

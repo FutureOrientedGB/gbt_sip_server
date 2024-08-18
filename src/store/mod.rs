@@ -1,7 +1,7 @@
 pub mod base;
 pub mod memory;
 pub mod not_impl;
-pub mod postgre;
+pub mod pg;
 pub mod redis;
 
 use crate::utils::cli::CommandLines;
@@ -13,8 +13,8 @@ pub fn create_store(
         "memory" => {
             return Box::new(memory::MemoryStore::new(cli_args));
         }
-        "postgre" => {
-            return Box::new(postgre::PostgreStore::new(cli_args));
+        "postgresql" => {
+            return Box::new(pg::PostgreSqlStore::new(cli_args));
         }
         "redis" => {
             return Box::new(redis::RedisStore::new(cli_args));

@@ -4,15 +4,15 @@ use uuid::Uuid;
 use crate::store::base::StoreEngine;
 use crate::utils::cli::CommandLines;
 
-pub struct PostgreStore {
+pub struct PostgreSqlStore {
     pub quit_flag: bool,
     pub task_handle: Option<tokio::task::JoinHandle<()>>,
     pub service_id: String, // random generated on boot, report to load balence
 }
 
-impl PostgreStore {
+impl PostgreSqlStore {
     pub fn new(_cli_args: &CommandLines) -> Self {
-        PostgreStore {
+        PostgreSqlStore {
             quit_flag: true,
             task_handle: None,
             service_id: Uuid::new_v4().to_string(),
@@ -20,7 +20,7 @@ impl PostgreStore {
     }
 }
 
-impl StoreEngine for PostgreStore {
+impl StoreEngine for PostgreSqlStore {
     fn is_connected(&self) -> bool {
         return false;
     }
@@ -124,6 +124,6 @@ impl StoreEngine for PostgreStore {
     }
 }
 
-unsafe impl Send for PostgreStore {}
+unsafe impl Send for PostgreSqlStore {}
 
-unsafe impl Sync for PostgreStore {}
+unsafe impl Sync for PostgreSqlStore {}

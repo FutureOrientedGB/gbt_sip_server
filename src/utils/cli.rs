@@ -1,12 +1,21 @@
+use local_ip_address::local_ip;
+
 use structopt::StructOpt;
+
+use tracing;
+
 use crate::version;
 
 #[derive(Clone, StructOpt)]
 pub struct CommandLines {
-    #[structopt(long, default_value = "memory", help = "memory, postgre or redis")]
+    #[structopt(long, default_value = "memory", help = "memory, postgresql or redis")]
     pub store_engine: String,
 
-    #[structopt(long, default_value = "", help = "connect url for store_engine, like redis://user:pass@host:port/db or postgresql://user:pass@host:port/db")]
+    #[structopt(
+        long,
+        default_value = "",
+        help = "connect url for store_engine, like redis://user:pass@host:port/db or postgresql://user:pass@host:port/db"
+    )]
     pub store_url: String,
 
     #[structopt(long, default_value = version::APP_NAME)]
@@ -15,7 +24,7 @@ pub struct CommandLines {
     #[structopt(long, default_value = "0.0.0.0")]
     pub host: String,
 
-    #[structopt(long)]
+    #[structopt(long, default_value = "")]
     pub sip_ip: String,
 
     #[structopt(long, default_value = "5060")]
@@ -52,6 +61,12 @@ pub struct CommandLines {
 impl CommandLines {
     pub fn new(app_name: &str, app_version: &str) -> CommandLines {
         let cli_app = CommandLines::clap().name(app_name).version(app_version);
-        CommandLines::from_clap(&cli_app.get_matches())
+
+        let mut results = CommandLines::from_clap(&cli_app.get_matches());
+        if results.sip_ip.is_empty() {
+            results.sip_ip = local_ip().unwrap().to_string();
+        }
+
+        return results;
     }
 }

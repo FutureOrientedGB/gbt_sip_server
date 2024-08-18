@@ -10,7 +10,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli_args = utils::cli::CommandLines::new(&version::APP_NAME, &version::APP_VERSION);
 
     // open daily log
-    utils::log::open_daily_file_log(&version::APP_NAME, &version::APP_VERSION, cli_args.sip_port);
+    utils::log::open_daily_file_log(&version::APP_NAME, &version::APP_VERSION, &cli_args);
 
     // prepare sip server
     let sip_socket = sip::server::bind(&cli_args).await?;
@@ -25,16 +25,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // run sip server
     let sip_handler = sip::handler::SipHandler::new(&cli_args, store_engine, sip_socket);
     let sip_handler_arc = std::sync::Arc::new(sip_handler);
-    let sip_service = sip::server::run_forever(
-        &cli_args,
-        &sip_handler_arc,
-    );
+    let sip_service = sip::server::run_forever(&cli_args, &sip_handler_arc);
 
     // run http server
-    let http_service = http::server::run_forever(
-        &cli_args,
-        sip_handler_arc.clone(),
-    );
+    let http_service = http::server::run_forever(&cli_args, sip_handler_arc.clone());
 
     // wait
     let _ = tokio::join!(sip_service, http_service);

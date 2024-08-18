@@ -10,7 +10,7 @@ use crate::sip::handler::base::SipHandler;
 impl SipHandler {
     pub async fn on_req_message(
         &self,
-        client_addr: std::net::SocketAddr,
+        device_addr: std::net::SocketAddr,
         request: sip_rs::Request,
     ) {
         // decode body
@@ -20,10 +20,10 @@ impl SipHandler {
         let cmd_type = self.extract_cmd_type(&msg);
         match cmd_type.as_str() {
             "Keepalive" => {
-                self.on_keep_alive(client_addr, request, msg).await;
+                self.on_keep_alive(device_addr, request, msg).await;
             }
             "DeviceStatus" => {
-                self.on_device_status(client_addr, request, msg).await;
+                self.on_device_status(device_addr, request, msg).await;
             }
             _ => {}
         }
@@ -31,7 +31,7 @@ impl SipHandler {
 
     pub async fn on_rsp_message(
         &self,
-        _client_addr: std::net::SocketAddr,
+        _device_addr: std::net::SocketAddr,
         _response: sip_rs::Response,
     ) {
         let i = 0;

@@ -21,10 +21,10 @@ impl SipHandler {
     }
 
     pub fn encode_body(data: &String) -> Vec<u8> {
-        let s = data.replace(r#"encoding="UTF-8""#, r#"encoding="GB18030""#);
-        let (msg, _encoding, has_error) = encoding_rs::GB18030.encode(&s);
+        let s = data.replace(r#"encoding="UTF-8""#, r#"encoding="GB2312""#);
+        let (msg, _encoding, has_error) = encoding_rs::GBK.encode(&s);
         if has_error {
-            tracing::error!("encoding_rs::GB18030.encode error");
+            tracing::error!("encoding_rs::GBK.encode error");
             return vec![];
         }
 

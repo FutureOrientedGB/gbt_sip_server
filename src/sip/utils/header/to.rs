@@ -8,7 +8,7 @@ use crate::sip::handler::base::SipHandler;
 impl SipHandler {
     pub fn to_old(&self, request: &sip_rs::Request) -> sip_rs::headers::To {
         let to = request.to_header().unwrap().typed().unwrap();
-        to.with_tag(self.tag_new(8).into()).into()
+        to.with_tag(self.tag_new(10).into()).into()
     }
 
     pub fn to_new(&self, gb_code: &String) -> sip_rs::headers::To {
@@ -18,7 +18,7 @@ impl SipHandler {
             uri: sip_rs::Uri::try_from(from_uri).unwrap(),
             params: Default::default(),
         }
-        .with_tag(self.tag_new(8).into())
+        .with_tag(self.tag_new(10).into())
         .into()
     }
 }

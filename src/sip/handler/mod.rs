@@ -24,20 +24,25 @@ use rsip::{
 
 use crate::utils::ansi_color as Color;
 
+const INVALID_PREFIX: [u8; 4] = [b'\r', b'\n', b'\r', b'\n'];
 const RESPONSE_PREFIX: [u8; 3] = [b'S', b'I', b'P'];
 
 impl SipHandler {
-    pub async fn dispatch(&self, client_addr: SocketAddr, sip_data: &[u8]) {
+    pub async fn dispatch(&self, device_addr: SocketAddr, sip_data: &[u8]) {
+        if sip_data.len() == INVALID_PREFIX.len() && sip_data == INVALID_PREFIX {
+            return;
+        }
+        
         if sip_data.len() > RESPONSE_PREFIX.len()
             && sip_data[..RESPONSE_PREFIX.len()] == RESPONSE_PREFIX
         {
-            self.dispatch_response(client_addr, sip_data).await;
+            self.dispatch_response(device_addr, sip_data).await;
         } else {
-            self.dispatch_request(client_addr, sip_data).await;
+            self.dispatch_request(device_addr, sip_data).await;
         }
     }
 
-    pub async fn dispatch_request(&self, client_addr: SocketAddr, sip_data: &[u8]) {
+    pub async fn dispatch_request(&self, device_addr: SocketAddr, sip_data: &[u8]) {
         match sip_rs::Request::try_from(sip_data) {
             Err(e) => {
                 tracing::error!(
@@ -53,7 +58,7 @@ impl SipHandler {
                     "{}⮜⮜⮜⮜⮜ {}UdpSocket::recv_from({}) ok, amount: {:?}, request:{}\n{}",
                     Color::PURPLE,
                     Color::CYAN,
-                    client_addr,
+                    device_addr,
                     sip_data.len(),
                     Color::RESET,
                     format!(
@@ -78,26 +83,26 @@ impl SipHandler {
                 }
 
                 match request.method() {
-                    sip_rs::Method::Register => self.on_req_register(client_addr, request).await,
-                    sip_rs::Method::Ack => self.on_req_ack(client_addr, request).await,
-                    sip_rs::Method::Bye => self.on_req_bye(client_addr, request).await,
-                    sip_rs::Method::Cancel => self.on_req_cancel(client_addr, request).await,
-                    sip_rs::Method::Info => self.on_req_info(client_addr, request).await,
-                    sip_rs::Method::Invite => self.on_req_invite(client_addr, request).await,
-                    sip_rs::Method::Message => self.on_req_message(client_addr, request).await,
-                    sip_rs::Method::Notify => self.on_req_notify(client_addr, request).await,
-                    sip_rs::Method::Options => self.on_req_options(client_addr, request).await,
-                    sip_rs::Method::PRack => self.on_req_prack(client_addr, request).await,
-                    sip_rs::Method::Publish => self.on_req_publish(client_addr, request).await,
-                    sip_rs::Method::Refer => self.on_req_refer(client_addr, request).await,
-                    sip_rs::Method::Subscribe => self.on_req_subscribe(client_addr, request).await,
-                    sip_rs::Method::Update => self.on_req_update(client_addr, request).await,
+                    sip_rs::Method::Register => self.on_req_register(device_addr, request).await,
+                    sip_rs::Method::Ack => self.on_req_ack(device_addr, request).await,
+                    sip_rs::Method::Bye => self.on_req_bye(device_addr, request).await,
+                    sip_rs::Method::Cancel => self.on_req_cancel(device_addr, request).await,
+                    sip_rs::Method::Info => self.on_req_info(device_addr, request).await,
+                    sip_rs::Method::Invite => self.on_req_invite(device_addr, request).await,
+                    sip_rs::Method::Message => self.on_req_message(device_addr, request).await,
+                    sip_rs::Method::Notify => self.on_req_notify(device_addr, request).await,
+                    sip_rs::Method::Options => self.on_req_options(device_addr, request).await,
+                    sip_rs::Method::PRack => self.on_req_prack(device_addr, request).await,
+                    sip_rs::Method::Publish => self.on_req_publish(device_addr, request).await,
+                    sip_rs::Method::Refer => self.on_req_refer(device_addr, request).await,
+                    sip_rs::Method::Subscribe => self.on_req_subscribe(device_addr, request).await,
+                    sip_rs::Method::Update => self.on_req_update(device_addr, request).await,
                 };
             }
         };
     }
 
-    pub async fn dispatch_response(&self, client_addr: SocketAddr, sip_data: &[u8]) {
+    pub async fn dispatch_response(&self, device_addr: SocketAddr, sip_data: &[u8]) {
         match sip_rs::Response::try_from(sip_data) {
             Err(e) => {
                 tracing::error!(
@@ -113,7 +118,7 @@ impl SipHandler {
                     "{}⮜⮜⮜⮜⮜ {}UdpSocket::recv_from({}) ok, amount: {:?}, response:{}\n{}",
                     Color::PURPLE,
                     Color::CYAN,
-                    client_addr,
+                    device_addr,
                     sip_data.len(),
                     Color::RESET,
                     format!(
@@ -128,20 +133,20 @@ impl SipHandler {
                 if let Ok(seq) = response.cseq_header() {
                     if let Ok(method) = seq.method() {
                         match method {
-                            sip_rs::Method::Register => self.on_rsp_register(client_addr, response).await,
-                            sip_rs::Method::Ack => self.on_rsp_ack(client_addr, response).await,
-                            sip_rs::Method::Bye => self.on_rsp_bye(client_addr, response).await,
-                            sip_rs::Method::Cancel => self.on_rsp_cancel(client_addr, response).await,
-                            sip_rs::Method::Info => self.on_rsp_info(client_addr, response).await,
-                            sip_rs::Method::Invite => self.on_rsp_invite(client_addr, response).await,
-                            sip_rs::Method::Message => self.on_rsp_message(client_addr, response).await,
-                            sip_rs::Method::Notify => self.on_rsp_notify(client_addr, response).await,
-                            sip_rs::Method::Options => self.on_rsp_options(client_addr, response).await,
-                            sip_rs::Method::PRack => self.on_rsp_prack(client_addr, response).await,
-                            sip_rs::Method::Publish => self.on_rsp_publish(client_addr, response).await,
-                            sip_rs::Method::Refer => self.on_rsp_refer(client_addr, response).await,
-                            sip_rs::Method::Subscribe => self.on_rsp_subscribe(client_addr, response).await,
-                            sip_rs::Method::Update => self.on_rsp_update(client_addr, response).await,
+                            sip_rs::Method::Register => self.on_rsp_register(device_addr, response).await,
+                            sip_rs::Method::Ack => self.on_rsp_ack(device_addr, response).await,
+                            sip_rs::Method::Bye => self.on_rsp_bye(device_addr, response).await,
+                            sip_rs::Method::Cancel => self.on_rsp_cancel(device_addr, response).await,
+                            sip_rs::Method::Info => self.on_rsp_info(device_addr, response).await,
+                            sip_rs::Method::Invite => self.on_rsp_invite(device_addr, response).await,
+                            sip_rs::Method::Message => self.on_rsp_message(device_addr, response).await,
+                            sip_rs::Method::Notify => self.on_rsp_notify(device_addr, response).await,
+                            sip_rs::Method::Options => self.on_rsp_options(device_addr, response).await,
+                            sip_rs::Method::PRack => self.on_rsp_prack(device_addr, response).await,
+                            sip_rs::Method::Publish => self.on_rsp_publish(device_addr, response).await,
+                            sip_rs::Method::Refer => self.on_rsp_refer(device_addr, response).await,
+                            sip_rs::Method::Subscribe => self.on_rsp_subscribe(device_addr, response).await,
+                            sip_rs::Method::Update => self.on_rsp_update(device_addr, response).await,
                         }
                     }
                 }

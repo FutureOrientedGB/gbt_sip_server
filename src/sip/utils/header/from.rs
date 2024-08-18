@@ -21,7 +21,7 @@ impl SipHandler {
             uri: sip_rs::Uri::try_from(from_uri).unwrap(),
             params: Default::default(),
         }
-        .with_tag(self.tag_new(8).into())
+        .with_tag(self.tag_new(10).into())
         .into()
     }
 }

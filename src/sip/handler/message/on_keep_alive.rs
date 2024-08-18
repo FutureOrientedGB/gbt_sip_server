@@ -7,7 +7,7 @@ use crate::{
 impl SipHandler {
     pub async fn on_keep_alive(
         &self,
-        _client_addr: std::net::SocketAddr,
+        _device_addr: std::net::SocketAddr,
         request: sip_rs::Request,
         msg: String,
     ) {

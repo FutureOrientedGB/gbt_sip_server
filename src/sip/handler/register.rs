@@ -8,30 +8,31 @@ use crate::sip::handler::base::SipHandler;
 impl SipHandler {
     pub async fn on_req_register(
         &self,
-        client_addr: std::net::SocketAddr,
+        device_addr: std::net::SocketAddr,
         request: sip_rs::Request,
     ) {
         if let Some(auth) = request.authorization_header() {
             if let Ok(auth) = auth.typed() {
                 if self.is_authorized(&auth.username, request.method(), &auth.uri, &auth.response) {
                     return self
-                        .on_req_register_200(client_addr, &request, &auth.username)
+                        .on_req_register_200(device_addr, &request, &auth.username)
                         .await;
                 }
             }
         }
 
-        return self.on_req_register_401(client_addr, &request).await;
+        return self.on_req_register_401(device_addr, &request).await;
     }
 
     async fn on_req_register_401(
         &self,
-        client_addr: std::net::SocketAddr,
+        device_addr: std::net::SocketAddr,
         request: &sip_rs::Request,
     ) {
         let mut headers: sip_rs::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
-        headers.push(self.from_old(&request).into());
+        // headers.push(self.from_old(&request).into());
+        headers.push(request.from_header().unwrap().clone().into());
         headers.push(self.to_old(&request).into());
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
@@ -55,12 +56,12 @@ impl SipHandler {
             body: Default::default(),
         };
 
-        self.socket_send_response(client_addr, response).await;
+        self.socket_send_response(device_addr, response).await;
     }
 
     async fn on_req_register_200(
         &self,
-        client_addr: std::net::SocketAddr,
+        device_addr: std::net::SocketAddr,
         request: &sip_rs::Request,
         gb_code: &String,
     ) {
@@ -79,7 +80,7 @@ impl SipHandler {
                         .branch()
                         .unwrap()
                         .to_string();
-                    self.store.register(&branch, &gb_code, client_addr);
+                    self.store.register(&branch, &gb_code, device_addr);
                 }
             }
         }
@@ -99,17 +100,17 @@ impl SipHandler {
             body: Default::default(),
         };
 
-        self.socket_send_response(client_addr, response).await;
+        self.socket_send_response(device_addr, response).await;
 
         if is_register {
-            self.send_device_status_query(client_addr, &Self::branch_get(&request), gb_code)
+            self.send_device_status_query(device_addr, &Self::branch_get(&request), gb_code)
                 .await;
         }
     }
 
     pub async fn on_rsp_register(
         &self,
-        _client_addr: std::net::SocketAddr,
+        _device_addr: std::net::SocketAddr,
         _response: sip_rs::Response,
     ) {
     }
