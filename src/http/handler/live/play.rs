@@ -10,7 +10,7 @@ async fn post_play(
     data: web::Json<LivePlayRequest>,
     sip_handler: web::Data<std::sync::Arc<SipHandler>>,
 ) -> impl Responder {
-    let (not_found, is_playing, stream_id, device_addr, branch) =
+    let (not_found, is_playing, stream_id, device_addr, tcp_stream, branch) =
         sip_handler.store.invite(&data.gb_code, true);
 
     let (mut code, mut msg) = (200, "OK");
@@ -24,6 +24,7 @@ async fn post_play(
     sip_handler
         .send_invite(
             device_addr,
+            tcp_stream,
             &branch,
             &String::from("127.0.0.1"),
             12345,

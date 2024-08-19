@@ -9,24 +9,28 @@ impl SipHandler {
     pub async fn on_req_register(
         &self,
         device_addr: std::net::SocketAddr,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         request: sip_rs::Request,
     ) {
         if let Some(auth) = request.authorization_header() {
             if let Ok(auth) = auth.typed() {
                 if self.is_authorized(&auth.username, request.method(), &auth.uri, &auth.response) {
                     return self
-                        .on_req_register_200(device_addr, &request, &auth.username)
+                        .on_req_register_200(device_addr, tcp_stream, &request, &auth.username)
                         .await;
                 }
             }
         }
 
-        return self.on_req_register_401(device_addr, &request).await;
+        return self
+            .on_req_register_401(device_addr, tcp_stream, &request)
+            .await;
     }
 
     async fn on_req_register_401(
         &self,
         device_addr: std::net::SocketAddr,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         request: &sip_rs::Request,
     ) {
         let mut headers: sip_rs::Headers = Default::default();
@@ -55,12 +59,13 @@ impl SipHandler {
             body: Default::default(),
         };
 
-        self.socket_send_response(device_addr, response).await;
+        self.socket_send_response(device_addr, tcp_stream, response).await;
     }
 
     async fn on_req_register_200(
         &self,
         device_addr: std::net::SocketAddr,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         request: &sip_rs::Request,
         gb_code: &String,
     ) {
@@ -79,7 +84,7 @@ impl SipHandler {
                         .branch()
                         .unwrap()
                         .to_string();
-                    self.store.register(&branch, &gb_code, device_addr);
+                    self.store.register(&branch, &gb_code, device_addr, &tcp_stream);
                 }
             }
         }
@@ -99,12 +104,16 @@ impl SipHandler {
             body: Default::default(),
         };
 
-        self.socket_send_response(device_addr, response).await;
+        let tcp_stream_ref = &tcp_stream;
+        self.socket_send_response(device_addr, tcp_stream_ref.clone(), response).await;
 
         if is_register {
+            let via = request.via_header().unwrap();
             self.send_device_status_query(
                 device_addr,
-                &Self::branch_get(request.via_header().unwrap()),
+                tcp_stream_ref.clone(),
+                self.transport_get(via),
+                &self.branch_get(via),
                 gb_code,
             )
             .await;

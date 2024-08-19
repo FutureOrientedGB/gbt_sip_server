@@ -49,28 +49,32 @@ pub fn open_daily_file_log(app_name: &str, app_version: &str, cli_args: &Command
 
     tracing::info!(
         "start services{}
-────────────────────────────────────────────────────
-⮞      ┌─┐┌┐┌┬┐  ┌─┐┬┌─┐  ┌─┐┌─┐┬─┐┬  ┬┌─┐┬─┐
-⮞      │ ┬├┴┐│   └─┐│├─┘  └─┐├┤ ├┬┘└┐┌┘├┤ ├┬┘
-⮞      └─┘└─┘┴   └─┘┴┴    └─┘└─┘┴└─ └┘ └─┘┴└─
-⮞            v: {}
-⮞ https://github.com:FutureOrientedGB/gbt_sip_server
-────────────────────────────────────────────────────
-⮞ store_engine: {}
-⮞ store_url: {}
-⮞ user_agent: {}
-⮞ host: {}
-⮞ sip_ip: {}
-⮞ sip_port: {}
-⮞ sip_domain: {}
-⮞ sip_id: {}
-⮞ sip_password: {}
-⮞ sip_algorithm: {}
-⮞ sip_nonce: {}
-⮞ sip_realm: {}
-⮞ call_id: {}
-⮞ socket_recv_buffer_size: {}
-────────────────────────────────────────────────────{}",
+╔══════════════════════════════════════════════════════════╗
+║          ┌─┐┌┐┌┬┐  ┌─┐┬┌─┐  ┌─┐┌─┐┬─┐┬  ┬┌─┐┬─┐          ║
+║          ║ ┬├┴┐║   └─┐║├─┘  └─┐├┤ ├┬┘└┐┌┘├┤ ├┬┘          ║
+║          └─┘└─┘┴   └─┘┴┴    └─┘└─┘┴└─ └┘ └─┘┴└─          ║
+║══════════════════════════════════════════════════════════║
+║                                                          ║
+║ git: https://github.com:FutureOrientedGB/gbt_sip_server  ║
+║                                                          ║
+║ version: {:<47} ║
+║                                                          ║
+║ store_engine: {:<42} ║
+║ store_url: {:<45} ║
+║ user_agent: {:<44} ║
+║ host: {:<50} ║
+║ sip_ip: {:<48} ║
+║ sip_port: {:<46} ║
+║ http_port: {:<45} ║
+║ sip_domain: {:<44} ║
+║ sip_id: {:<48} ║
+║ sip_password: {:<42} ║
+║ sip_algorithm: {:<41} ║
+║ sip_nonce: {:<45} ║
+║ sip_realm: {:<45} ║
+║ call_id: {:<47} ║
+║ socket_recv_buffer_size: {:<31} ║
+╚══════════════════════════════════════════════════════════╝{}",
         Color::PURPLE,
         app_version,
         &cli_args.store_engine,
@@ -79,6 +83,7 @@ pub fn open_daily_file_log(app_name: &str, app_version: &str, cli_args: &Command
         &cli_args.host,
         &cli_args.sip_ip,
         &cli_args.sip_port,
+        &cli_args.http_port,
         &cli_args.sip_domain,
         &cli_args.sip_id,
         &cli_args.sip_password,

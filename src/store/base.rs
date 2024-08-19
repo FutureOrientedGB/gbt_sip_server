@@ -10,15 +10,46 @@ pub trait StoreEngine: Send + Sync {
     fn set_global_sequence(&self, seq: u32);
     fn add_fetch_global_sequence(&self) -> u32;
 
-    fn find_device_by_gb_code(&self, key: &String) -> Option<(String, std::net::SocketAddr)>;
-    fn find_device_by_stream_id(&self, key: u32) -> Option<(String, std::net::SocketAddr)>;
+    fn find_device_by_gb_code(
+        &self,
+        key: &String,
+    ) -> Option<(
+        String,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+    )>;
+    fn find_device_by_stream_id(
+        &self,
+        key: u32,
+    ) -> Option<(
+        String,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+    )>;
     fn find_gb_code(&self, stream_id: u32) -> String;
 
-    fn register(&self, branch: &String, gb_code: &String, socket_addr: std::net::SocketAddr) -> bool;
+    fn register(
+        &self,
+        branch: &String,
+        gb_code: &String,
+        socket_addr: std::net::SocketAddr,
+        tcp_stream: &Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+    ) -> bool;
     fn unregister(&self, gb_code: &String) -> bool;
     fn register_keep_alive(&self, gb_code: &String) -> bool;
 
-    fn invite(&self, gb_code: &String, is_live: bool) -> (bool, bool, u32, std::net::SocketAddr, String);
+    fn invite(
+        &self,
+        gb_code: &String,
+        is_live: bool,
+    ) -> (
+        bool,
+        bool,
+        u32,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        String,
+    );
     fn bye(&self, gb_code: &String, stream_id: u32) -> bool;
     fn stream_keep_alive(&self, gb_code: &String, stream_id: u32) -> bool;
 

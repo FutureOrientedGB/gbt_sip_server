@@ -43,11 +43,25 @@ impl StoreEngine for NotImplStore {
         return 0;
     }
 
-    fn find_device_by_gb_code(&self, _key: &String) -> Option<(String, std::net::SocketAddr)> {
+    fn find_device_by_gb_code(
+        &self,
+        _key: &String,
+    ) -> Option<(
+        String,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+    )> {
         return None;
     }
 
-    fn find_device_by_stream_id(&self, _key: u32) -> Option<(String, std::net::SocketAddr)> {
+    fn find_device_by_stream_id(
+        &self,
+        _key: u32,
+    ) -> Option<(
+        String,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+    )> {
         return None;
     }
 
@@ -60,6 +74,7 @@ impl StoreEngine for NotImplStore {
         _branch: &String,
         _gb_code: &String,
         _socket_addr: std::net::SocketAddr,
+        _tcp_stream: &Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
     ) -> bool {
         return false;
     }
@@ -76,7 +91,14 @@ impl StoreEngine for NotImplStore {
         &self,
         _gb_code: &String,
         _is_live: bool,
-    ) -> (bool, bool, u32, std::net::SocketAddr, String) {
+    ) -> (
+        bool,
+        bool,
+        u32,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        String,
+    ) {
         return (
             false,
             false,
@@ -85,6 +107,7 @@ impl StoreEngine for NotImplStore {
                 std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)),
                 8080,
             ),
+            None,
             String::new(),
         );
     }

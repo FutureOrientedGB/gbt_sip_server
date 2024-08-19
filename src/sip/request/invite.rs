@@ -7,6 +7,7 @@ impl SipHandler {
     pub async fn send_invite(
         &self,
         device_addr: std::net::SocketAddr,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         branch: &String,
         media_server_ip: &String,
         media_server_port: u16,
@@ -28,7 +29,7 @@ impl SipHandler {
 
         // headers
         let mut headers: sip_rs::Headers = Default::default();
-        headers.push(self.via(branch).into());
+        headers.push(self.via(if tcp_stream.is_some() {rsip::Transport::Tcp} else {rsip::Transport::Udp}, branch).into());
         headers.push(sip_rs::headers::MaxForwards::default().into());
         headers.push(self.from_new().into());
         headers.push(self.to_new(gb_code).into());
@@ -83,7 +84,7 @@ impl SipHandler {
         };
 
         return self
-            .socket_send_request_with_body(device_addr, request, bin_body, str_body)
+            .socket_send_request_with_body(device_addr, tcp_stream, request, bin_body, str_body)
             .await;
     }
 }

@@ -1,15 +1,15 @@
 use rsip::{
     self as sip_rs,
-    prelude::{HeadersExt, ToTypedHeader},
+    prelude::ToTypedHeader,
 };
 
 use crate::sip::handler::base::SipHandler;
 
 impl SipHandler {
-    pub fn via(&self, branch: &String) -> sip_rs::headers::Via {
+    pub fn via(&self, transport: rsip::Transport, branch: &String) -> sip_rs::headers::Via {
         sip_rs::typed::Via {
             version: sip_rs::Version::V2,
-            transport: sip_rs::Transport::Udp,
+            transport: transport,
             uri: sip_rs::Uri {
                 host_with_port: (self.ip.clone(), self.port).into(),
                 ..Default::default()
@@ -22,7 +22,7 @@ impl SipHandler {
         .into()
     }
 
-    pub fn branch_get(via: &sip_rs::headers::Via) -> String {
+    pub fn branch_get(&self, via: &sip_rs::headers::Via) -> String {
         if let Ok(tv) = via.typed() {
             if let Some(branch) = tv.branch() {
                 return branch.to_string();
@@ -30,5 +30,13 @@ impl SipHandler {
         }
 
         return String::new();
+    }
+
+    pub fn transport_get(&self, via: &sip_rs::headers::Via) -> rsip::Transport {
+        if let Ok(tv) = via.typed() {
+            return tv.transport;
+        }
+
+        return rsip::Transport::Udp;
     }
 }

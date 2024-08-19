@@ -8,24 +8,38 @@ pub struct MemoryStore {
     pub quit_flag: bool,
     pub task_handle: Option<tokio::task::JoinHandle<()>>,
     pub service_id: String, // random generated on boot, report to load balence
+    pub stream_timeout_seconds: u32,
+    pub device_timeout_seconds: u32,
     pub live_stream_id: std::sync::atomic::AtomicU32, // auto increment
     pub replay_stream_id: std::sync::atomic::AtomicU32, // auto increment
     pub global_sn: std::sync::atomic::AtomicU32, // SN
     pub register_sequence: std::sync::atomic::AtomicU32, // CSeq
     pub global_sequence: std::sync::atomic::AtomicU32, // CSeq
     pub sip_devices: std::sync::Arc<
-        std::sync::Mutex<std::collections::HashMap<String, (String, std::net::SocketAddr, u32)>>,
+        std::sync::Mutex<
+            std::collections::HashMap<
+                String,
+                (
+                    String,
+                    std::net::SocketAddr,
+                    Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+                    u32,
+                ),
+            >,
+        >,
     >, // device gb_code -> (branch, net addr, ts)
     pub gb_streams: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u32, (String, u32)>>>, // stream_id -> (device gb_code, ts)
     pub gb_streams_rev: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, u32>>>, // device gb_code -> stream_id
 }
 
 impl MemoryStore {
-    pub fn new(_cli_args: &CommandLines) -> Self {
+    pub fn new(cli_args: &CommandLines) -> Self {
         MemoryStore {
             quit_flag: true,
             task_handle: None,
             service_id: Uuid::new_v4().to_string(),
+            stream_timeout_seconds: cli_args.stream_timeout_seconds,
+            device_timeout_seconds: cli_args.stream_timeout_seconds,
             live_stream_id: std::sync::atomic::AtomicU32::new(0),
             replay_stream_id: std::sync::atomic::AtomicU32::new(0),
             global_sn: std::sync::atomic::AtomicU32::new(0),
@@ -33,7 +47,12 @@ impl MemoryStore {
             global_sequence: std::sync::atomic::AtomicU32::new(0),
             sip_devices: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::<
                 String,
-                (String, std::net::SocketAddr, u32),
+                (
+                    String,
+                    std::net::SocketAddr,
+                    Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+                    u32,
+                ),
             >::default())),
             gb_streams: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::<
                 u32,
@@ -84,14 +103,28 @@ impl StoreEngine for MemoryStore {
             + 1
     }
 
-    fn find_device_by_gb_code(&self, key: &String) -> Option<(String, std::net::SocketAddr)> {
-        if let Some((branch, addr, _ts)) = self.sip_devices.lock().unwrap().get(key) {
-            return Some((branch.clone(), addr.clone()));
+    fn find_device_by_gb_code(
+        &self,
+        key: &String,
+    ) -> Option<(
+        String,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+    )> {
+        if let Some((branch, addr, tcp_stream, _ts)) = self.sip_devices.lock().unwrap().get(key) {
+            return Some((branch.clone(), addr.clone(), tcp_stream.clone()));
         }
         return None;
     }
 
-    fn find_device_by_stream_id(&self, key: u32) -> Option<(String, std::net::SocketAddr)> {
+    fn find_device_by_stream_id(
+        &self,
+        key: u32,
+    ) -> Option<(
+        String,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+    )> {
         let gb_code = self.find_gb_code(key);
         if !gb_code.is_empty() {
             return self.find_device_by_gb_code(&gb_code);
@@ -111,6 +144,7 @@ impl StoreEngine for MemoryStore {
         branch: &String,
         gb_code: &String,
         socket_addr: std::net::SocketAddr,
+        tcp_stream: &Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
     ) -> bool {
         let locked_devices = self.sip_devices.lock().unwrap();
         if locked_devices.get(gb_code).is_none() {
@@ -121,10 +155,10 @@ impl StoreEngine for MemoryStore {
                 .expect("Time went backwards")
                 .as_secs() as u32;
 
-            self.sip_devices
-                .lock()
-                .unwrap()
-                .insert(gb_code.clone(), (branch.clone(), socket_addr, ts));
+            self.sip_devices.lock().unwrap().insert(
+                gb_code.clone(),
+                (branch.clone(), socket_addr, tcp_stream.clone(), ts),
+            );
             return true;
         }
         return false;
@@ -143,9 +177,10 @@ impl StoreEngine for MemoryStore {
 
     fn register_keep_alive(&self, gb_code: &String) -> bool {
         let locked_device = self.sip_devices.lock().unwrap();
-        if let Some((brh, addr, _ts)) = locked_device.get(gb_code) {
+        if let Some((brh, addr, tcp_stream, _ts)) = locked_device.get(gb_code) {
             let address = addr.clone();
             let branch = brh.clone();
+            let stream = tcp_stream.clone();
             drop(locked_device);
 
             let ts = std::time::SystemTime::now()
@@ -156,13 +191,24 @@ impl StoreEngine for MemoryStore {
             self.sip_devices
                 .lock()
                 .unwrap()
-                .insert(gb_code.clone(), (branch.clone(), address, ts));
+                .insert(gb_code.clone(), (branch.clone(), address, stream, ts));
             return true;
         }
         return false;
     }
 
-    fn invite(&self, gb_code: &String, is_live: bool) -> (bool, bool, u32, std::net::SocketAddr, String) {
+    fn invite(
+        &self,
+        gb_code: &String,
+        is_live: bool,
+    ) -> (
+        bool,
+        bool,
+        u32,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        String,
+    ) {
         let result = self.find_device_by_gb_code(gb_code);
         if result.is_none() {
             return (
@@ -173,10 +219,11 @@ impl StoreEngine for MemoryStore {
                     std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)),
                     8080,
                 ),
+                None,
                 String::new(),
             );
         }
-        let (branch, device_addr) = result.unwrap();
+        let (branch, device_addr, tcp_stream) = result.unwrap();
 
         let stream_id = if is_live {
             self.live_stream_id
@@ -203,7 +250,7 @@ impl StoreEngine for MemoryStore {
             .unwrap()
             .insert(gb_code.clone(), stream_id);
 
-        return (true, is_playing, stream_id, device_addr, branch);
+        return (true, is_playing, stream_id, device_addr, tcp_stream, branch);
     }
 
     fn bye(&self, _gb_code: &String, stream_id: u32) -> bool {
@@ -245,6 +292,8 @@ impl StoreEngine for MemoryStore {
         let sip_devices = self.sip_devices.clone();
         let gb_streams = self.gb_streams.clone();
 
+        let stream_timeout_seconds = self.stream_timeout_seconds;
+        let device_timeout_seconds = self.device_timeout_seconds;
         self.task_handle = Some(tokio::spawn(async move {
             tracing::info!("start_timeout_check begin");
 
@@ -256,7 +305,7 @@ impl StoreEngine for MemoryStore {
 
                 let mut timeout_streams = Vec::<(String, u32)>::default();
                 for (stream_id, (gb_code, ts)) in gb_streams.lock().unwrap().iter() {
-                    if *ts - ts_now > 180 {
+                    if *ts - ts_now > stream_timeout_seconds {
                         timeout_streams.push((gb_code.clone(), *stream_id));
                     }
                 }
@@ -268,8 +317,10 @@ impl StoreEngine for MemoryStore {
                 }
 
                 let mut timeout_devices = Vec::<String>::default();
-                for (gb_code, (_branch, _sock, ts)) in sip_devices.lock().unwrap().iter() {
-                    if *ts - ts_now > 3600 {
+                for (gb_code, (_branch, _sock, _tcp_stream, ts)) in
+                    sip_devices.lock().unwrap().iter()
+                {
+                    if *ts - ts_now > device_timeout_seconds {
                         timeout_devices.push(gb_code.clone());
                     }
                 }

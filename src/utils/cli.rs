@@ -56,6 +56,12 @@ pub struct CommandLines {
 
     #[structopt(long, default_value = "65535")]
     pub socket_recv_buffer_size: usize,
+
+    #[structopt(long, default_value = "180")]
+    pub stream_timeout_seconds: u32,
+
+    #[structopt(long, default_value = "300")]
+    pub device_timeout_seconds: u32,
 }
 
 impl CommandLines {

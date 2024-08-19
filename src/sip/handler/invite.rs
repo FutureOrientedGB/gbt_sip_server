@@ -10,6 +10,7 @@ impl SipHandler {
     pub async fn on_req_invite(
         &self,
         _device_addr: std::net::SocketAddr,
+        _tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         _request: sip_rs::Request,
     ) {
     }
@@ -17,12 +18,15 @@ impl SipHandler {
     pub async fn on_rsp_invite(
         &self,
         device_addr: std::net::SocketAddr,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         response: sip_rs::Response,
     ) {
         if &rsip::StatusCode::Trying == response.status_code() {
-            self.on_rsp_invite_100(device_addr, response).await;
+            self.on_rsp_invite_100(device_addr, tcp_stream, response)
+                .await;
         } else if &rsip::StatusCode::OK == response.status_code() {
-            self.on_rsp_invite_200(device_addr, response).await;
+            self.on_rsp_invite_200(device_addr, tcp_stream, response)
+                .await;
         } else {
             tracing::warn!("unexpected response, method: {}", response.status_code());
         }
@@ -31,6 +35,7 @@ impl SipHandler {
     pub async fn on_rsp_invite_100(
         &self,
         _device_addr: std::net::SocketAddr,
+        _tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         _response: sip_rs::Response,
     ) {
     }
@@ -38,10 +43,11 @@ impl SipHandler {
     pub async fn on_rsp_invite_200(
         &self,
         device_addr: std::net::SocketAddr,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         response: sip_rs::Response,
     ) {
         // decode body
-        let sdp_msg = Self::decode_body(response.body());
+        let sdp_msg = self.decode_body(response.body());
 
         match sdp_rs::SessionDescription::from_str(&sdp_msg) {
             Err(e) => {
@@ -75,7 +81,7 @@ impl SipHandler {
                         body: Default::default(),
                     };
 
-                    self.socket_send_request(device_addr, request).await;
+                    self.socket_send_request(device_addr, tcp_stream, request).await;
                 }
             }
         }
