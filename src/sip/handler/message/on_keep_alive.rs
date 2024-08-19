@@ -1,8 +1,6 @@
 use rsip::{self as sip_rs, prelude::HeadersExt};
 
-use crate::{
-    sip::handler::base::SipHandler, sip::message::KeepAlive,
-};
+use crate::{sip::handler::base::SipHandler, sip::message::KeepAlive};
 
 impl SipHandler {
     pub async fn on_keep_alive(
@@ -28,8 +26,8 @@ impl SipHandler {
 
         let mut headers: sip_rs::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
-        headers.push(self.from_old(&request).into());
-        headers.push(self.to_old(&request).into());
+        headers.push(request.from_header().unwrap().clone().into());
+        headers.push(self.to_old(request.to_header().unwrap()).into());
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
         headers.push(sip_rs::Header::ContentLength(Default::default()));

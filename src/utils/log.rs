@@ -53,7 +53,8 @@ pub fn open_daily_file_log(app_name: &str, app_version: &str, cli_args: &Command
 ⮞      ┌─┐┌┐┌┬┐  ┌─┐┬┌─┐  ┌─┐┌─┐┬─┐┬  ┬┌─┐┬─┐
 ⮞      │ ┬├┴┐│   └─┐│├─┘  └─┐├┤ ├┬┘└┐┌┘├┤ ├┬┘
 ⮞      └─┘└─┘┴   └─┘┴┴    └─┘└─┘┴└─ └┘ └─┘┴└─
-⮞             {}
+⮞            v: {}
+⮞ https://github.com:FutureOrientedGB/gbt_sip_server
 ────────────────────────────────────────────────────
 ⮞ store_engine: {}
 ⮞ store_url: {}

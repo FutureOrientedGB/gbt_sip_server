@@ -1,6 +1,6 @@
 use rand::Rng;
 
-use rsip::{self as sip_rs, prelude::HeadersExt};
+use rsip as sip_rs;
 
 use crate::sip::handler::base::SipHandler;
 
@@ -20,12 +20,10 @@ impl SipHandler {
             .collect()
     }
 
-    pub fn tag_get(&self, request: &sip_rs::Request) -> String {
-        if let Ok(f) = request.from_header() {
-            if let Ok(t) = f.tag() {
-                if let Some(tag) = t {
-                    return tag.to_string();
-                }
+    pub fn tag_get(&self, from: &sip_rs::headers::From) -> String {
+        if let Ok(t) = from.tag() {
+            if let Some(tag) = t {
+                return tag.to_string();
             }
         }
 

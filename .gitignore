@@ -15,3 +15,6 @@ Cargo.lock
 
 # project version file
 src/version.rs
+
+# project build number file
+build_number.txt

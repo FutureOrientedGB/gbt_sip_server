@@ -54,12 +54,8 @@ impl SipHandler {
             body: Default::default(),
         };
 
-        return self.socket_send_request_with_body(
-            device_addr,
-            request,
-            bin_body,
-            text_body,
-        )
-        .await;
+        return self
+            .socket_send_request_with_body(device_addr, request, bin_body, text_body)
+            .await;
     }
 }

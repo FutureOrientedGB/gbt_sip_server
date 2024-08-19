@@ -12,14 +12,14 @@ fn main() {
 
 fn trigger_build_every_time() {
     // write build_number.txt to trigger build.rs
-    let build_number_file = format!("{}/build_number.txt", std::env::var("OUT_DIR").unwrap());
-    let count = if !std::path::Path::new(&build_number_file).exists() {
+    let build_number_file = "build_number.txt";
+    let count = if !std::path::Path::new(build_number_file).exists() {
         1
     } else {
-        let content = std::fs::read_to_string(&build_number_file).unwrap();
+        let content = std::fs::read_to_string(build_number_file).unwrap();
         content.parse::<u32>().unwrap_or(0) + 1
     };
-    std::fs::write(&build_number_file, count.to_string()).expect("Unable to write file");
+    std::fs::write(build_number_file, count.to_string()).expect("Unable to write file");
 
     println!("cargo:rerun-if-changed={}", build_number_file);
 }

@@ -22,14 +22,13 @@ impl SipHandler {
         .into()
     }
 
-    pub fn branch_get(request: &sip_rs::Request) -> String {
-        if let Ok(v) = request.via_header() {
-            if let Ok(tv) = v.typed() {
-                if let Some(branch) = tv.branch() {
-                    return branch.to_string();
-                }
+    pub fn branch_get(via: &sip_rs::headers::Via) -> String {
+        if let Ok(tv) = via.typed() {
+            if let Some(branch) = tv.branch() {
+                return branch.to_string();
             }
         }
+
         return String::new();
     }
 }

@@ -31,9 +31,8 @@ impl SipHandler {
     ) {
         let mut headers: sip_rs::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
-        // headers.push(self.from_old(&request).into());
         headers.push(request.from_header().unwrap().clone().into());
-        headers.push(self.to_old(&request).into());
+        headers.push(self.to_old(request.to_header().unwrap()).into());
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
         headers.push(sip_rs::Header::ContentLength(Default::default()));
@@ -87,8 +86,8 @@ impl SipHandler {
 
         let mut headers: sip_rs::Headers = Default::default();
         headers.push(request.via_header().unwrap().clone().into());
-        headers.push(self.from_old(&request).into());
-        headers.push(self.to_old(&request).into());
+        headers.push(request.from_header().unwrap().clone().into());
+        headers.push(self.to_old(request.to_header().unwrap()).into());
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
         headers.push(sip_rs::Header::ContentLength(Default::default()));
@@ -103,8 +102,12 @@ impl SipHandler {
         self.socket_send_response(device_addr, response).await;
 
         if is_register {
-            self.send_device_status_query(device_addr, &Self::branch_get(&request), gb_code)
-                .await;
+            self.send_device_status_query(
+                device_addr,
+                &Self::branch_get(request.via_header().unwrap()),
+                gb_code,
+            )
+            .await;
         }
     }
 
