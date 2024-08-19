@@ -2,7 +2,7 @@ use local_ip_address::local_ip;
 
 use structopt::StructOpt;
 
-use tracing;
+use sysinfo;
 
 use crate::version;
 
@@ -13,7 +13,7 @@ pub struct CommandLines {
 
     #[structopt(
         long,
-        default_value = "",
+        default_value = "memory://",
         help = "connect url for store_engine, like redis://user:pass@host:port/db or postgresql://user:pass@host:port/db"
     )]
     pub store_url: String,
@@ -63,8 +63,17 @@ impl CommandLines {
         let cli_app = CommandLines::clap().name(app_name).version(app_version);
 
         let mut results = CommandLines::from_clap(&cli_app.get_matches());
+        
         if results.sip_ip.is_empty() {
             results.sip_ip = local_ip().unwrap().to_string();
+        }
+
+        if results.store_url.starts_with("memory://") {
+            let sys = sysinfo::System::new_with_specifics(
+                sysinfo::RefreshKind::new().with_memory(sysinfo::MemoryRefreshKind::everything()),
+            );
+            let mem = sys.total_memory() as f64 / (1024.0 * 1024.0 * 1024.0);
+            results.store_url = format!("memory://main?total={}g", mem.round() as u64);
         }
 
         return results;

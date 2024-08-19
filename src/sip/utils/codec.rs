@@ -1,5 +1,7 @@
 use encoding_rs;
 
+use textcode;
+
 use tracing;
 
 use crate::sip::handler::base::SipHandler;
@@ -22,12 +24,14 @@ impl SipHandler {
 
     pub fn encode_body(data: &String) -> Vec<u8> {
         let s = data.replace(r#"encoding="UTF-8""#, r#"encoding="GB2312""#);
-        let (msg, _encoding, has_error) = encoding_rs::GBK.encode(&s);
-        if has_error {
-            tracing::error!("encoding_rs::GBK.encode error");
-            return vec![];
-        }
+        return textcode::gb2312::encode_to_vec(s.as_str());
 
-        return msg.to_vec();
+        // let (msg, _encoding, has_error) = encoding_rs::GBK.encode(&s);
+        // if has_error {
+        //     tracing::error!("encoding_rs::GBK.encode error");
+        //     return vec![];
+        // }
+
+        // return msg.to_vec();
     }
 }
