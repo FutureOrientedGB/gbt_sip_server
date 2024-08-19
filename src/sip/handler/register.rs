@@ -39,7 +39,6 @@ impl SipHandler {
         headers.push(self.to_old(request.to_header().unwrap()).into());
         headers.push(request.call_id_header().unwrap().clone().into());
         headers.push(request.cseq_header().unwrap().clone().into());
-        headers.push(sip_rs::Header::ContentLength(Default::default()));
 
         headers.push(
             sip_rs::typed::WwwAuthenticate {
@@ -51,6 +50,7 @@ impl SipHandler {
             }
             .into(),
         );
+        headers.push(sip_rs::Header::ContentLength(Default::default()));
 
         let response = sip_rs::Response {
             status_code: sip_rs::StatusCode::Unauthorized,

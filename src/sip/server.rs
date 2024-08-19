@@ -2,7 +2,10 @@ use tokio::{self, io::AsyncReadExt};
 
 use crate::sip::handler::SipHandler;
 
-use crate::utils::cli::CommandLines;
+use crate::utils::{cli::CommandLines, kmp::Kmp};
+
+pub static DOUBLE_CR_LF: &[u8; 4] = b"\r\n\r\n";
+pub static CONTENT_LENGTH: &[u8; 15] = b"Content-Length:";
 
 pub async fn bind(
     cli_args: &CommandLines,
@@ -38,35 +41,65 @@ pub async fn bind(
 }
 
 fn parse_sip_message(buffer: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
-    let mut content_length = 0;
+    // kmp search content-length
+    if let Some(mut content_length_begin_pos) = Kmp::find_first_occurrence(buffer, CONTENT_LENGTH) {
+        content_length_begin_pos += CONTENT_LENGTH.len();
 
-    if let Some(mut pos) = buffer.windows(4).position(|window| window == b"\r\n\r\n") {
-        if let Some(mut i) = buffer
-            .windows(15)
-            .position(|window| window == b"Content-Length:")
-        {
-            i += 15;
-            let mut j = i;
-            while j < buffer.len() {
-                if buffer[j] != b'\r' && buffer[j] != b'\n' {
-                    j += 1;
-                } else {
-                    break;
-                }
+        let mut content_length_end_pos = content_length_begin_pos;
+        while content_length_end_pos < buffer.len() {
+            if buffer[content_length_end_pos] != b'\r' && buffer[content_length_end_pos] != b'\n' {
+                content_length_end_pos += 1;
+            } else {
+                break;
             }
-            content_length = String::from_utf8_lossy(&buffer[i..j]).trim()
-                .parse::<usize>()
-                .unwrap_or(0);
         }
 
-        if buffer.len() - pos - 4 >= content_length {
-            pos += 4 + content_length;
-            let sip_message = buffer[..pos].to_vec();
-            let remaining = buffer[pos..].to_vec();
-            return Some((sip_message, remaining));
+        let content_length = String::from_utf8_lossy(&buffer[content_length_begin_pos..content_length_end_pos]).trim()
+            .parse::<usize>()
+            .unwrap_or(0);
+
+        // kmp search \r\n\r\n 
+        if let Some(mut content_pos) = Kmp::find_first_occurrence(&buffer[content_length_end_pos..], DOUBLE_CR_LF) {
+            if buffer.len() - content_pos - DOUBLE_CR_LF.len() >= content_length {
+                content_pos += content_length_end_pos + DOUBLE_CR_LF.len() + content_length;
+                let sip_message = buffer[..content_pos].to_vec();
+                let remaining = buffer[content_pos..].to_vec();
+                return Some((sip_message, remaining));
+            }
         }
     }
+
     None
+
+    // let mut content_length = 0;
+
+    // if let Some(mut pos) = buffer.windows(4).position(|window| window == b"\r\n\r\n") {
+    //     if let Some(mut i) = buffer
+    //         .windows(15)
+    //         .position(|window| window == b"Content-Length:")
+    //     {
+    //         i += 15;
+    //         let mut j = i;
+    //         while j < buffer.len() {
+    //             if buffer[j] != b'\r' && buffer[j] != b'\n' {
+    //                 j += 1;
+    //             } else {
+    //                 break;
+    //             }
+    //         }
+    //         content_length = String::from_utf8_lossy(&buffer[i..j]).trim()
+    //             .parse::<usize>()
+    //             .unwrap_or(0);
+    //     }
+
+    //     if buffer.len() - pos - 4 >= content_length {
+    //         pos += 4 + content_length;
+    //         let sip_message = buffer[..pos].to_vec();
+    //         let remaining = buffer[pos..].to_vec();
+    //         return Some((sip_message, remaining));
+    //     }
+    // }
+    // None
 }
 
 pub async fn run_forever(

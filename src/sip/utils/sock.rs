@@ -6,6 +6,7 @@ use tokio::io::AsyncWriteExt;
 use tracing;
 
 use crate::sip::handler::SipHandler;
+use crate::sip::server::DOUBLE_CR_LF;
 use crate::utils::ansi_color as Color;
 
 impl SipHandler {
@@ -36,7 +37,12 @@ impl SipHandler {
     ) -> bool {
         let mut contents: Vec<u8> = vec![];
         contents.extend(request.to_string().as_bytes());
+        // if &contents[contents.len() - DOUBLE_CR_LF.len()..] == DOUBLE_CR_LF {
+        //     contents.truncate(contents.len() - DOUBLE_CR_LF.len() / 2);
+        // }
         contents.extend(bin_body);
+        contents.extend(DOUBLE_CR_LF);
+
         return self
             .socket_send(
                 addr,
@@ -75,7 +81,12 @@ impl SipHandler {
     ) -> bool {
         let mut contents: Vec<u8> = vec![];
         contents.extend(response.to_string().as_bytes());
+        // if &contents[contents.len() - DOUBLE_CR_LF.len()..] == DOUBLE_CR_LF {
+        //     contents.truncate(contents.len() - DOUBLE_CR_LF.len() / 2);
+        // }
         contents.extend(bin_body);
+        contents.extend(DOUBLE_CR_LF);
+
         return self
             .socket_send(
                 addr,
