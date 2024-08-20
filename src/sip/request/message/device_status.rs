@@ -24,7 +24,7 @@ impl SipHandler {
         headers.push(sip_rs::headers::MaxForwards::default().into());
         headers.push(self.from_new().into());
         headers.push(self.to_new(gb_code).into());
-        headers.push(sip_rs::headers::CallId::from(format!("{}@{}", self.call_id, self.ip)).into());
+        headers.push(self.caller_id_new().into());
         headers.push(
             sip_rs::typed::CSeq {
                 seq: self.store.add_fetch_global_sequence(),

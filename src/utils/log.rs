@@ -72,7 +72,6 @@ pub fn open_daily_file_log(app_name: &str, app_version: &str, cli_args: &Command
 ║ sip_algorithm: {:<41} ║
 ║ sip_nonce: {:<45} ║
 ║ sip_realm: {:<45} ║
-║ call_id: {:<47} ║
 ║ socket_recv_buffer_size: {:<31} ║
 ╚══════════════════════════════════════════════════════════╝{}",
         Color::PURPLE,
@@ -90,7 +89,6 @@ pub fn open_daily_file_log(app_name: &str, app_version: &str, cli_args: &Command
         &cli_args.sip_algorithm,
         &cli_args.sip_nonce,
         &cli_args.sip_realm,
-        &cli_args.call_id,
         &cli_args.socket_recv_buffer_size,
         Color::RESET
     );

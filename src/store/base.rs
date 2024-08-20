@@ -68,6 +68,7 @@ pub trait StoreEngine: Send + Sync {
     fn invite(
         &self,
         _gb_code: &String,
+        _caller_id: &String,
         _is_live: bool,
     ) -> Option<(
         bool,
@@ -83,15 +84,14 @@ pub trait StoreEngine: Send + Sync {
         &self,
         _gb_code: &String,
         _stream_id: u32,
-    ) -> (
+    ) -> Option<(
         bool,
-        Option<(
-            String,
-            std::net::SocketAddr,
-            Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
-        )>,
-    ) {
-        return (false, None);
+        String,
+        String,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+    )> {
+        return None;
     }
 
     fn stream_keep_alive(&self, _gb_code: &String, _stream_id: u32) -> bool {

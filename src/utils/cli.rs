@@ -51,9 +51,6 @@ pub struct CommandLines {
     #[structopt(long, default_value = "gbt@future_oriented.com")]
     pub sip_realm: String,
 
-    #[structopt(long, default_value = "D9E9732AA7CA7246")]
-    pub call_id: String,
-
     #[structopt(long, default_value = "65535")]
     pub socket_recv_buffer_size: usize,
 

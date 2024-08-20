@@ -1,4 +1,5 @@
 use tokio;
+
 use uuid::Uuid;
 
 use crate::store::base::StoreEngine;
@@ -28,7 +29,8 @@ pub struct MemoryStore {
             >,
         >,
     >, // device gb_code -> (branch, net addr, ts)
-    pub gb_streams: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u32, (String, u32)>>>, // stream_id -> (device gb_code, ts)
+    pub gb_streams:
+        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u32, (String, String, u32)>>>, // stream_id -> (device gb_code, caller_id, ts)
     pub gb_streams_rev:
         std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Vec<u32>>>>, // device gb_code -> [stream_id]
 }
@@ -57,7 +59,7 @@ impl MemoryStore {
             >::default())),
             gb_streams: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::<
                 u32,
-                (String, u32),
+                (String, String, u32),
             >::default())),
             gb_streams_rev: std::sync::Arc::new(std::sync::Mutex::new(
                 std::collections::HashMap::<String, Vec<u32>>::default(),
@@ -134,7 +136,7 @@ impl StoreEngine for MemoryStore {
     }
 
     fn find_gb_code(&self, stream_id: u32) -> String {
-        if let Some((gb_code, _ts)) = self.gb_streams.lock().unwrap().get(&stream_id) {
+        if let Some((gb_code, _caller_id, _ts)) = self.gb_streams.lock().unwrap().get(&stream_id) {
             return gb_code.to_string();
         }
         return String::new();
@@ -201,6 +203,7 @@ impl StoreEngine for MemoryStore {
     fn invite(
         &self,
         gb_code: &String,
+        caller_id: &String,
         is_live: bool,
     ) -> Option<(
         bool,
@@ -231,7 +234,7 @@ impl StoreEngine for MemoryStore {
         self.gb_streams
             .lock()
             .unwrap()
-            .insert(stream_id, (gb_code.clone(), ts));
+            .insert(stream_id, (gb_code.clone(), caller_id.clone(), ts));
 
         let is_playing = self.gb_streams_rev.lock().unwrap().get(gb_code).is_some();
 
@@ -250,16 +253,18 @@ impl StoreEngine for MemoryStore {
         &self,
         gb_code: &String,
         stream_id: u32,
-    ) -> (
+    ) -> Option<(
         bool,
-        Option<(
-            String,
-            std::net::SocketAddr,
-            Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
-        )>,
-    ) {
-        if self.find_gb_code(stream_id).is_empty() {
-            return (false, None);
+        String,
+        String,
+        std::net::SocketAddr,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+    )> {
+        let mut cid = String::new();
+        if let Some((_gb_code, call_id, _ts)) = self.gb_streams.lock().unwrap().get(&stream_id) {
+            cid = call_id.clone();
+        } else {
+            return None;
         }
 
         self.gb_streams.lock().unwrap().remove(&stream_id);
@@ -273,12 +278,17 @@ impl StoreEngine for MemoryStore {
             self.gb_streams_rev.lock().unwrap().remove(gb_code);
         }
 
-        return (bye_to_device, self.find_device_by_gb_code(&gb_code));
+        if let Some((branch, addr, tcp_stream)) = self.find_device_by_gb_code(&gb_code) {
+            return Some((bye_to_device, cid, branch, addr, tcp_stream));
+        }
+
+        return None;
     }
 
     fn stream_keep_alive(&self, gb_code: &String, stream_id: u32) -> bool {
         let locked_streams = self.gb_streams.lock().unwrap();
-        if let Some((_gb_code, _ts)) = locked_streams.get(&stream_id) {
+        if let Some((_gb_code, caller_id, _ts)) = locked_streams.get(&stream_id) {
+            let cid = caller_id.clone();
             drop(locked_streams);
 
             let ts = std::time::SystemTime::now()
@@ -289,7 +299,7 @@ impl StoreEngine for MemoryStore {
             self.gb_streams
                 .lock()
                 .unwrap()
-                .insert(stream_id, (gb_code.clone(), ts));
+                .insert(stream_id, (gb_code.clone(), cid, ts));
             return true;
         }
         return false;
@@ -318,7 +328,7 @@ impl StoreEngine for MemoryStore {
                     .as_secs() as u32;
 
                 let mut timeout_streams = Vec::<(String, u32)>::default();
-                for (stream_id, (gb_code, ts)) in gb_streams.lock().unwrap().iter() {
+                for (stream_id, (gb_code, _caller_id, ts)) in gb_streams.lock().unwrap().iter() {
                     if *ts - ts_now > stream_timeout_seconds {
                         timeout_streams.push((gb_code.clone(), *stream_id));
                     }

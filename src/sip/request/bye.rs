@@ -9,6 +9,7 @@ impl SipHandler {
         device_addr: std::net::SocketAddr,
         tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         branch: &String,
+        caller_id: &String,
         gb_code: &String,
     ) -> bool {
         // headers
@@ -31,7 +32,7 @@ impl SipHandler {
             sip_rs::headers::Contact::new(format!("<sip:{}@{}:{}>", self.id, self.ip, self.port))
                 .into(),
         );
-        headers.push(sip_rs::headers::CallId::from(format!("{}@{}", self.call_id, self.ip)).into());
+        headers.push(self.caller_id_from_str(caller_id).into());
         headers.push(
             sip_rs::typed::CSeq {
                 seq: self.store.add_fetch_global_sequence(),
