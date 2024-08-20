@@ -10,30 +10,32 @@ async fn post_play(
     data: web::Json<LivePlayRequest>,
     sip_handler: web::Data<std::sync::Arc<SipHandler>>,
 ) -> impl Responder {
-    let (not_found, is_playing, stream_id, device_addr, tcp_stream, branch) =
-        sip_handler.store.invite(&data.gb_code, true);
-
     let (mut code, mut msg) = (200, "OK");
-    if not_found {
-        (code, msg) = (404, "ipc device not found")
-    }
 
-    if is_playing {
-        // dispatch
-    }
-    sip_handler
-        .send_invite(
-            device_addr,
-            tcp_stream,
-            &branch,
-            &String::from("127.0.0.1"),
-            12345,
-            sip::message::sdp::SdpSessionType::Play,
-            &data.gb_code,
-            0,
-            0,
-        )
-        .await;
+    let mut stream_id = 0;
+    match sip_handler.store.invite(&data.gb_code, true) {
+        None => (code, msg) = (404, "ipc device not found"),
+        Some((is_playing, id, device_addr, tcp_stream, branch)) => {
+            stream_id = id;
+            
+            if is_playing {
+                // dispatch
+            }
+            sip_handler
+                .send_invite(
+                    device_addr,
+                    tcp_stream,
+                    &branch,
+                    &String::from("127.0.0.1"),
+                    12345,
+                    sip::message::sdp::SdpSessionType::Play,
+                    &data.gb_code,
+                    0,
+                    0,
+                )
+                .await;
+        }
+    };
 
     let result = LivePlayResponse {
         locate: format!("{}#L{}", file!(), line!()),

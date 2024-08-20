@@ -12,7 +12,7 @@ pub struct MemoryStore {
     pub device_timeout_seconds: u32,
     pub live_stream_id: std::sync::atomic::AtomicU32, // auto increment
     pub replay_stream_id: std::sync::atomic::AtomicU32, // auto increment
-    pub global_sn: std::sync::atomic::AtomicU32, // SN
+    pub global_sn: std::sync::atomic::AtomicU32,      // SN
     pub register_sequence: std::sync::atomic::AtomicU32, // CSeq
     pub global_sequence: std::sync::atomic::AtomicU32, // CSeq
     pub sip_devices: std::sync::Arc<
@@ -201,27 +201,16 @@ impl StoreEngine for MemoryStore {
         &self,
         gb_code: &String,
         is_live: bool,
-    ) -> (
-        bool,
+    ) -> Option<(
         bool,
         u32,
         std::net::SocketAddr,
         Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         String,
-    ) {
+    )> {
         let result = self.find_device_by_gb_code(gb_code);
         if result.is_none() {
-            return (
-                false,
-                false,
-                0,
-                std::net::SocketAddr::new(
-                    std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)),
-                    8080,
-                ),
-                None,
-                String::new(),
-            );
+            return None;
         }
         let (branch, device_addr, tcp_stream) = result.unwrap();
 
@@ -250,7 +239,7 @@ impl StoreEngine for MemoryStore {
             .unwrap()
             .insert(gb_code.clone(), stream_id);
 
-        return (true, is_playing, stream_id, device_addr, tcp_stream, branch);
+        return Some((is_playing, stream_id, device_addr, tcp_stream, branch));
     }
 
     fn bye(&self, _gb_code: &String, stream_id: u32) -> bool {

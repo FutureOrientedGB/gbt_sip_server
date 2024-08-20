@@ -6,7 +6,6 @@ use tokio::io::AsyncWriteExt;
 use tracing;
 
 use crate::sip::handler::SipHandler;
-use crate::sip::server::DOUBLE_CR_LF;
 use crate::utils::ansi_color as Color;
 
 impl SipHandler {
@@ -35,22 +34,9 @@ impl SipHandler {
         bin_body: Vec<u8>,
         str_body: String,
     ) -> bool {
-        let mut contents: Vec<u8> = vec![];
-        contents.extend(request.to_string().as_bytes());
-        // if &contents[contents.len() - DOUBLE_CR_LF.len()..] == DOUBLE_CR_LF {
-        //     contents.truncate(contents.len() - DOUBLE_CR_LF.len() / 2);
-        // }
-        contents.extend(bin_body);
-        contents.extend(DOUBLE_CR_LF);
-
+        let (content, text) = self.build_content(request.to_string(), str_body, bin_body);
         return self
-            .socket_send(
-                addr,
-                tcp_stream,
-                contents.as_slice(),
-                format!("{}{}", request.to_string(), str_body),
-                "request",
-            )
+            .socket_send(addr, tcp_stream, content.as_slice(), text, "request")
             .await;
     }
 
@@ -79,22 +65,9 @@ impl SipHandler {
         bin_body: Vec<u8>,
         str_body: String,
     ) -> bool {
-        let mut contents: Vec<u8> = vec![];
-        contents.extend(response.to_string().as_bytes());
-        // if &contents[contents.len() - DOUBLE_CR_LF.len()..] == DOUBLE_CR_LF {
-        //     contents.truncate(contents.len() - DOUBLE_CR_LF.len() / 2);
-        // }
-        contents.extend(bin_body);
-        contents.extend(DOUBLE_CR_LF);
-
+        let (content, text) = self.build_content(response.to_string(), str_body, bin_body);
         return self
-            .socket_send(
-                addr,
-                tcp_stream,
-                contents.as_slice(),
-                format!("{}{}", response.to_string(), str_body),
-                "response",
-            )
+            .socket_send(addr, tcp_stream, content.as_slice(), text, "response")
             .await;
     }
 
@@ -136,7 +109,7 @@ impl SipHandler {
             }
             Ok(amount) => {
                 tracing::info!(
-                    "{}⮞⮞⮞⮞⮞ {}UdpSocket::send_to({}) ok, amount: {:?}, {}:{}\n{}",
+                    "{}⮞⮞⮞⮞⮞ {}UdpSocket::send_to({}) ok, amount: {}, {}:{}\n{}",
                     Color::GREEN,
                     Color::CYAN,
                     addr,
@@ -170,13 +143,13 @@ impl SipHandler {
                 );
                 return false;
             }
-            Ok(amount) => {
+            Ok(()) => {
                 tracing::info!(
-                    "{}⮞⮞⮞⮞⮞ {}TcpStream::send_to({}) ok, amount: {:?}, {}:{}\n{}",
+                    "{}⮞⮞⮞⮞⮞ {}TcpStream::send_to({}) ok, amount: {}, {}:{}\n{}",
                     Color::GREEN,
                     Color::CYAN,
                     addr,
-                    amount,
+                    data.len(),
                     data_type,
                     Color::RESET,
                     text
@@ -184,5 +157,18 @@ impl SipHandler {
                 return true;
             }
         }
+    }
+
+    fn build_content(
+        &self,
+        headers: String,
+        str_body: String,
+        bin_body: Vec<u8>,
+    ) -> (Vec<u8>, String) {
+        let mut content: Vec<u8> = vec![];
+        content.extend(headers.as_bytes());
+        content.extend(bin_body);
+
+        return (content, format!("{headers}{str_body}"));
     }
 }

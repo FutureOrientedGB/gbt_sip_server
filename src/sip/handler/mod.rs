@@ -24,8 +24,7 @@ use rsip::{
 
 use crate::utils::ansi_color as Color;
 
-const INVALID_PREFIX: [u8; 4] = [b'\r', b'\n', b'\r', b'\n'];
-const RESPONSE_PREFIX: [u8; 3] = [b'S', b'I', b'P'];
+use super::server::{DOUBLE_CR_LF_BYTES, SIP_BYTES};
 
 impl SipHandler {
     pub async fn dispatch(
@@ -34,13 +33,11 @@ impl SipHandler {
         tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
         sip_data: &[u8],
     ) {
-        if sip_data.len() == INVALID_PREFIX.len() && sip_data == INVALID_PREFIX {
+        if sip_data.len() == DOUBLE_CR_LF_BYTES.len() && sip_data == DOUBLE_CR_LF_BYTES {
             return;
         }
 
-        if sip_data.len() > RESPONSE_PREFIX.len()
-            && sip_data[..RESPONSE_PREFIX.len()] == RESPONSE_PREFIX
-        {
+        if sip_data.len() > SIP_BYTES.len() && sip_data[..SIP_BYTES.len()] == SIP_BYTES {
             self.dispatch_response(device_addr, tcp_stream, sip_data)
                 .await;
         } else {
@@ -67,7 +64,7 @@ impl SipHandler {
             }
             Ok(request) => {
                 tracing::info!(
-                    "{}⮜⮜⮜⮜⮜ {}UdpSocket::recv_from({}) ok, amount: {:?}, request:{}\n{}",
+                    "{}⮜⮜⮜⮜⮜ {}sip_rs::Request::try_from({}) ok, amount: {:?}, request:{}\n{}",
                     Color::PURPLE,
                     Color::CYAN,
                     device_addr,
@@ -148,7 +145,7 @@ impl SipHandler {
         match sip_rs::Response::try_from(sip_data) {
             Err(e) => {
                 tracing::error!(
-                    "{}sip_rs::Request::try_from error, e: {}, {}response: {}",
+                    "{}sip_rs::Response::try_from error, e: {}, {}response: {}",
                     Color::RED,
                     e,
                     Color::RESET,
@@ -157,14 +154,14 @@ impl SipHandler {
             }
             Ok(response) => {
                 tracing::info!(
-                    "{}⮜⮜⮜⮜⮜ {}UdpSocket::recv_from({}) ok, amount: {:?}, response:{}\n{}",
+                    "{}⮜⮜⮜⮜⮜ {}sip_rs::Response::try_from({}) ok, amount: {:?}, response:{}\n{}",
                     Color::PURPLE,
                     Color::CYAN,
                     device_addr,
                     sip_data.len(),
                     Color::RESET,
                     format!(
-                        "{} {}\n{}{}",
+                        "{} {}\n{}\n{}",
                         response.version().to_string(),
                         response.status_code().to_string(),
                         response.headers().to_string(),
