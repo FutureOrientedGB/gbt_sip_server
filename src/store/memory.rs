@@ -29,7 +29,8 @@ pub struct MemoryStore {
         >,
     >, // device gb_code -> (branch, net addr, ts)
     pub gb_streams: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u32, (String, u32)>>>, // stream_id -> (device gb_code, ts)
-    pub gb_streams_rev: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, u32>>>, // device gb_code -> stream_id
+    pub gb_streams_rev:
+        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Vec<u32>>>>, // device gb_code -> [stream_id]
 }
 
 impl MemoryStore {
@@ -40,8 +41,8 @@ impl MemoryStore {
             service_id: Uuid::new_v4().to_string(),
             stream_timeout_seconds: cli_args.stream_timeout_seconds,
             device_timeout_seconds: cli_args.stream_timeout_seconds,
-            live_stream_id: std::sync::atomic::AtomicU32::new(0),
-            replay_stream_id: std::sync::atomic::AtomicU32::new(0),
+            live_stream_id: std::sync::atomic::AtomicU32::new(1),
+            replay_stream_id: std::sync::atomic::AtomicU32::new(1),
             global_sn: std::sync::atomic::AtomicU32::new(0),
             register_sequence: std::sync::atomic::AtomicU32::new(0),
             global_sequence: std::sync::atomic::AtomicU32::new(0),
@@ -59,7 +60,7 @@ impl MemoryStore {
                 (String, u32),
             >::default())),
             gb_streams_rev: std::sync::Arc::new(std::sync::Mutex::new(
-                std::collections::HashMap::<String, u32>::default(),
+                std::collections::HashMap::<String, Vec<u32>>::default(),
             )),
         }
     }
@@ -204,9 +205,9 @@ impl StoreEngine for MemoryStore {
     ) -> Option<(
         bool,
         u32,
+        String,
         std::net::SocketAddr,
         Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
-        String,
     )> {
         let result = self.find_device_by_gb_code(gb_code);
         if result.is_none() {
@@ -234,21 +235,45 @@ impl StoreEngine for MemoryStore {
 
         let is_playing = self.gb_streams_rev.lock().unwrap().get(gb_code).is_some();
 
-        self.gb_streams_rev
-            .lock()
-            .unwrap()
-            .insert(gb_code.clone(), stream_id);
+        let mut gb_streams_locked = self.gb_streams_rev.lock().unwrap();
+        if let Some(streams) = gb_streams_locked.get_mut(gb_code) {
+            streams.push(stream_id);
+        } else {
+            gb_streams_locked.insert(gb_code.clone(), vec![stream_id]);
+        }
+        drop(gb_streams_locked);
 
-        return Some((is_playing, stream_id, device_addr, tcp_stream, branch));
+        return Some((is_playing, stream_id, branch, device_addr, tcp_stream));
     }
 
-    fn bye(&self, _gb_code: &String, stream_id: u32) -> bool {
+    fn bye(
+        &self,
+        gb_code: &String,
+        stream_id: u32,
+    ) -> (
+        bool,
+        Option<(
+            String,
+            std::net::SocketAddr,
+            Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        )>,
+    ) {
         if self.find_gb_code(stream_id).is_empty() {
-            return false;
+            return (false, None);
         }
 
         self.gb_streams.lock().unwrap().remove(&stream_id);
-        return true;
+
+        let mut bye_to_device = false;
+        if let Some(streams) = self.gb_streams_rev.lock().unwrap().get_mut(gb_code) {
+            streams.retain(|&id| id != stream_id);
+            bye_to_device = streams.is_empty();
+        }
+        if bye_to_device {
+            self.gb_streams_rev.lock().unwrap().remove(gb_code);
+        }
+
+        return (bye_to_device, self.find_device_by_gb_code(&gb_code));
     }
 
     fn stream_keep_alive(&self, gb_code: &String, stream_id: u32) -> bool {

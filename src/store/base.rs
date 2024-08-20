@@ -72,15 +72,26 @@ pub trait StoreEngine: Send + Sync {
     ) -> Option<(
         bool,
         u32,
+        String,
         std::net::SocketAddr,
         Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
-        String,
     )> {
         return None;
     }
 
-    fn bye(&self, _gb_code: &String, _stream_id: u32) -> bool {
-        return false;
+    fn bye(
+        &self,
+        _gb_code: &String,
+        _stream_id: u32,
+    ) -> (
+        bool,
+        Option<(
+            String,
+            std::net::SocketAddr,
+            Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        )>,
+    ) {
+        return (false, None);
     }
 
     fn stream_keep_alive(&self, _gb_code: &String, _stream_id: u32) -> bool {
