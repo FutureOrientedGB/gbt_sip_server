@@ -25,12 +25,12 @@ pub struct CommandLines {
     pub host: String,
 
     #[structopt(long, default_value = "")]
-    pub sip_ip: String,
+    pub my_ip: String,
 
     #[structopt(long, default_value = "5060")]
     pub sip_port: u16,
 
-    #[structopt(long, default_value = "8080")]
+    #[structopt(long, default_value = "6070")]
     pub http_port: u16,
 
     #[structopt(long, default_value = "3402000000")]
@@ -67,8 +67,8 @@ impl CommandLines {
 
         let mut results = CommandLines::from_clap(&cli_app.get_matches());
         
-        if results.sip_ip.is_empty() {
-            results.sip_ip = local_ip().unwrap().to_string();
+        if results.my_ip.is_empty() {
+            results.my_ip = local_ip().unwrap().to_string();
         }
 
         if results.store_url.starts_with("memory://") {

@@ -27,7 +27,7 @@ impl SipHandler {
         sip_tcp_listener: tokio::net::TcpListener,
     ) -> Self {
         SipHandler {
-            ip: cli_args.sip_ip.clone(),
+            ip: cli_args.my_ip.clone(),
             port: cli_args.sip_port,
             domain: cli_args.sip_domain.clone(),
             id: cli_args.sip_id.clone(),

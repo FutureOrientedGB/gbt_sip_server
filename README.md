@@ -166,7 +166,7 @@
   o=44010200492000400301 0 0 IN IP4 127.0.0.1
   s=Play
   t=0 0
-  m=video 12345 RTP/AVP 96 97 98 99
+  m=video 7080 RTP/AVP 96 97 98 99
   c=IN IP4 127.0.0.1
   a=rtpmap:96 PS/90000
   a=rtpmap:97 MPEG4/90000

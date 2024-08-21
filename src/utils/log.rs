@@ -32,7 +32,7 @@ pub fn open_daily_file_log(app_name: &str, app_version: &str, cli_args: &Command
         ))
         .with_line_number(true)
         .with_thread_ids(true)
-        // .with_ansi(false)
+        .with_ansi(true)
         .init();
 
     log_dir.push(format!(
@@ -63,7 +63,7 @@ pub fn open_daily_file_log(app_name: &str, app_version: &str, cli_args: &Command
 ║ store_url: {:<45} ║
 ║ user_agent: {:<44} ║
 ║ host: {:<50} ║
-║ sip_ip: {:<48} ║
+║ my_ip: {:<49} ║
 ║ sip_port: {:<46} ║
 ║ http_port: {:<45} ║
 ║ sip_domain: {:<44} ║
@@ -80,7 +80,7 @@ pub fn open_daily_file_log(app_name: &str, app_version: &str, cli_args: &Command
         &cli_args.store_url,
         &cli_args.user_agent,
         &cli_args.host,
-        &cli_args.sip_ip,
+        &cli_args.my_ip,
         &cli_args.sip_port,
         &cli_args.http_port,
         &cli_args.sip_domain,
