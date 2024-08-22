@@ -32,6 +32,7 @@ async fn post_start(
                     7080,
                     sip::message::sdp::SdpSessionType::Playback,
                     &data.gb_code,
+                    &data.setup_type,
                     data.start_ts,
                     data.stop_ts,
                 )

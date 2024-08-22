@@ -32,6 +32,7 @@ async fn post_play(
                     7080,
                     sip::message::sdp::SdpSessionType::Play,
                     &data.gb_code,
+                    &data.setup_type,
                     0,
                     0,
                 )

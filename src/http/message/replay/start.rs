@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ReplayStartRequest {
     pub gb_code: String,
+    pub setup_type: String,
     pub start_ts: u64,
     pub stop_ts: u64,
 }

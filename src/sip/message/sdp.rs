@@ -29,9 +29,9 @@ impl FromStr for SdpSessionType {
             "Playback" => Ok(Self::Playback),
             "Download" => Ok(Self::Download),
             "Talk" => Ok(Self::Talk),
-            _ => {
-                Err(String::from("Support lists: Play, Playback, Download, Talk"))
-            }
+            _ => Err(String::from(
+                "Support lists: Play, Playback, Download, Talk",
+            )),
         }
     }
 
@@ -42,50 +42,67 @@ pub fn generate_media_sdp(
     media_server_ip: &String,
     media_server_port: u16,
     device_gb_code: &String,
+    setup_type: &String,
     session_type: SdpSessionType,
     start_ts: u64,
     stop_ts: u64,
 ) -> String {
+    let mut attributes = vec![
+        sdp_rs::lines::Attribute::Rtpmap(sdp_rs::lines::attribute::Rtpmap {
+            payload_type: 96,
+            encoding_name: String::from("PS"),
+            clock_rate: 90000,
+            encoding_params: None,
+        }),
+        sdp_rs::lines::Attribute::Rtpmap(sdp_rs::lines::attribute::Rtpmap {
+            payload_type: 97,
+            encoding_name: String::from("MPEG4"),
+            clock_rate: 90000,
+            encoding_params: None,
+        }),
+        sdp_rs::lines::Attribute::Rtpmap(sdp_rs::lines::attribute::Rtpmap {
+            payload_type: 98,
+            encoding_name: String::from("H264"),
+            clock_rate: 90000,
+            encoding_params: None,
+        }),
+        sdp_rs::lines::Attribute::Rtpmap(sdp_rs::lines::attribute::Rtpmap {
+            payload_type: 99,
+            encoding_name: String::from("HEVC"),
+            clock_rate: 90000,
+            encoding_params: None,
+        }),
+        sdp_rs::lines::Attribute::Recvonly {},
+        sdp_rs::lines::Attribute::Other {
+            0: String::from("streamMode"),
+            1: Some(String::from("MAIN")),
+        },
+    ];
+    if !setup_type.is_empty() {
+        attributes.push(sdp_rs::lines::Attribute::Other {
+            0: String::from("setup"),
+            1: Some(setup_type.clone()),
+        });
+        attributes.push(sdp_rs::lines::Attribute::Other {
+            0: String::from("connection"),
+            1: Some(String::from("new")),
+        });
+    }
+
     // media description
     let media_desc = sdp_rs::MediaDescription {
         media: sdp_rs::lines::Media {
             media: sdp_rs::lines::media::MediaType::Video,
             port: media_server_port,
             num_of_ports: None,
-            proto: sdp_rs::lines::media::ProtoType::RtpAvp,
+            proto: if setup_type.is_empty() {
+                sdp_rs::lines::media::ProtoType::RtpAvp
+            } else {
+                sdp_rs::lines::media::ProtoType::Other(String::from("TCP/RTP/AVP"))
+            },
             fmt: String::from("96 97 98 99"),
         },
-        attributes: vec![
-            sdp_rs::lines::Attribute::Rtpmap(sdp_rs::lines::attribute::Rtpmap {
-                payload_type: 96,
-                encoding_name: String::from("PS"),
-                clock_rate: 90000,
-                encoding_params: None,
-            }),
-            sdp_rs::lines::Attribute::Rtpmap(sdp_rs::lines::attribute::Rtpmap {
-                payload_type: 97,
-                encoding_name: String::from("MPEG4"),
-                clock_rate: 90000,
-                encoding_params: None,
-            }),
-            sdp_rs::lines::Attribute::Rtpmap(sdp_rs::lines::attribute::Rtpmap {
-                payload_type: 98,
-                encoding_name: String::from("H264"),
-                clock_rate: 90000,
-                encoding_params: None,
-            }),
-            sdp_rs::lines::Attribute::Rtpmap(sdp_rs::lines::attribute::Rtpmap {
-                payload_type: 99,
-                encoding_name: String::from("HEVC"),
-                clock_rate: 90000,
-                encoding_params: None,
-            }),
-            sdp_rs::lines::Attribute::Recvonly {},
-            sdp_rs::lines::Attribute::Other {
-                0: String::from("streamMode"),
-                1: Some(String::from("MAIN")),
-            },
-        ],
+        attributes: attributes,
         info: None,
         connections: vec![sdp_rs::lines::Connection {
             nettype: sdp_rs::lines::common::Nettype::In,

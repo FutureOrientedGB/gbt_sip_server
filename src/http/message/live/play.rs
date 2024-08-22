@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LivePlayRequest {
     pub gb_code: String,
+    pub setup_type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

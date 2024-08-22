@@ -14,6 +14,7 @@ impl SipHandler {
         media_server_port: u16,
         session_type: sip::message::SdpSessionType,
         gb_code: &String,
+        setup_type: &String,
         start_ts: u64,
         stop_ts: u64,
     ) -> bool {
@@ -22,6 +23,7 @@ impl SipHandler {
             media_server_ip,
             media_server_port,
             gb_code,
+            setup_type,
             session_type,
             start_ts,
             stop_ts,
