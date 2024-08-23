@@ -4,7 +4,7 @@ use rsip::{self as sip_rs, prelude::HeadersExt};
 
 use sdp_rs;
 
-use crate::sip::handler::base::SipHandler;
+use super::SipHandler;
 
 impl SipHandler {
     pub async fn on_req_invite(

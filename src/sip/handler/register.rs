@@ -3,7 +3,7 @@ use rsip::{
     prelude::{HeadersExt, ToTypedHeader},
 };
 
-use crate::sip::handler::base::SipHandler;
+use super::SipHandler;
 
 impl SipHandler {
     pub async fn on_req_register(

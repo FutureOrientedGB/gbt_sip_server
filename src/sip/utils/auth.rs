@@ -1,6 +1,6 @@
 use rsip as sip_rs;
 
-use crate::sip::handler::base::SipHandler;
+use crate::sip::handler::SipHandler;
 
 impl SipHandler {
     pub fn is_authorized(&self, user_name: &String, method: &sip_rs::Method, uri: &sip_rs::Uri, digest: &String) -> bool {

@@ -3,7 +3,7 @@ use rsip::{
     prelude::ToTypedHeader,
 };
 
-use crate::sip::handler::base::SipHandler;
+use crate::sip::handler::SipHandler;
 
 impl SipHandler {
     pub fn to_old(&self, to: &rsip::headers::To) -> sip_rs::headers::To {

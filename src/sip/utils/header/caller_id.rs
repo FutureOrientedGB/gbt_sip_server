@@ -2,7 +2,7 @@ use rsip::{self as sip_rs, prelude::UntypedHeader};
 
 use uuid::Uuid;
 
-use crate::sip::handler::base::SipHandler;
+use crate::sip::handler::SipHandler;
 
 impl SipHandler {
     pub fn caller_id_new(&self) -> sip_rs::headers::CallId {

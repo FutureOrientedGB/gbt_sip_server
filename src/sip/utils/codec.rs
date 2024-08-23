@@ -4,7 +4,7 @@ use textcode;
 
 use tracing;
 
-use crate::sip::handler::base::SipHandler;
+use crate::sip::handler::SipHandler;
 
 impl SipHandler {
     pub fn decode_body(&self, data: &Vec<u8>) -> String {

@@ -1,6 +1,6 @@
 use rsip as sip_rs;
 
-use crate::sip::handler::base::SipHandler;
+use crate::sip::handler::SipHandler;
 
 impl SipHandler {
     pub fn from_new(&self) -> sip_rs::headers::From {

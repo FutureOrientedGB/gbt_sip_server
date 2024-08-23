@@ -1,6 +1,8 @@
 use rsip::{self as sip_rs, prelude::HeadersExt};
 
-use crate::{sip::handler::base::SipHandler, sip::message::DeviceStatus};
+use super::SipHandler;
+
+use crate::sip::message::DeviceStatus;
 
 impl SipHandler {
     pub async fn on_device_status(

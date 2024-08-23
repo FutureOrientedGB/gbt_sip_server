@@ -1,6 +1,8 @@
 use rsip::{self as sip_rs, prelude::HeadersExt};
 
-use crate::{sip::handler::base::SipHandler, sip::message::KeepAlive};
+use super::SipHandler;
+
+use crate::sip::message::KeepAlive;
 
 impl SipHandler {
     pub async fn on_keep_alive(
