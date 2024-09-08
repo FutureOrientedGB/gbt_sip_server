@@ -11,7 +11,7 @@ impl SipHandler {
     pub async fn on_req_message(
         &self,
         device_addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         request: sip_rs::Request,
     ) {
         // decode body
@@ -35,7 +35,7 @@ impl SipHandler {
     pub async fn on_rsp_message(
         &self,
         _device_addr: std::net::SocketAddr,
-        _tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        _tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         _response: sip_rs::Response,
     ) {
     }

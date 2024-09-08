@@ -9,7 +9,7 @@ impl SipHandler {
     pub async fn on_req_register(
         &self,
         device_addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         request: sip_rs::Request,
     ) {
         if let Some(auth) = request.authorization_header() {
@@ -30,7 +30,7 @@ impl SipHandler {
     async fn on_req_register_401(
         &self,
         device_addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         request: &sip_rs::Request,
     ) {
         let mut headers: sip_rs::Headers = Default::default();
@@ -65,7 +65,7 @@ impl SipHandler {
     async fn on_req_register_200(
         &self,
         device_addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         request: &sip_rs::Request,
         gb_code: &String,
     ) {

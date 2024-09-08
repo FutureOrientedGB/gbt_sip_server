@@ -7,7 +7,7 @@ impl SipHandler {
     pub async fn send_bye(
         &self,
         device_addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         branch: &String,
         caller_id: &String,
         gb_code: &String,

@@ -9,7 +9,7 @@ use crate::utils::cli::CommandLines;
 pub struct MemoryStore {
     pub quit_flag: bool,
     pub task_handle: Option<tokio::task::JoinHandle<()>>,
-    pub service_id: String, // random generated on boot, report to load balence
+    pub service_id: String, // random generated on boot, report to load balance
     pub stream_timeout_seconds: u32,
     pub device_timeout_seconds: u32,
     pub live_stream_id: std::sync::atomic::AtomicU32, // auto increment
@@ -24,7 +24,7 @@ pub struct MemoryStore {
                 (
                     String,
                     std::net::SocketAddr,
-                    Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+                    Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
                     u32,
                 ),
             >,
@@ -54,7 +54,7 @@ impl MemoryStore {
                 (
                     String,
                     std::net::SocketAddr,
-                    Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+                    Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
                     u32,
                 ),
             >::default())),
@@ -113,7 +113,7 @@ impl StoreEngine for MemoryStore {
     ) -> Option<(
         String,
         std::net::SocketAddr,
-        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
     )> {
         if let Some((branch, addr, tcp_stream, _ts)) = self.sip_devices.lock().unwrap().get(key) {
             return Some((branch.clone(), addr.clone(), tcp_stream.clone()));
@@ -127,7 +127,7 @@ impl StoreEngine for MemoryStore {
     ) -> Option<(
         String,
         std::net::SocketAddr,
-        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
     )> {
         let gb_code = self.find_gb_code(key);
         if !gb_code.is_empty() {
@@ -148,7 +148,7 @@ impl StoreEngine for MemoryStore {
         branch: &String,
         gb_code: &String,
         socket_addr: std::net::SocketAddr,
-        tcp_stream: &Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: &Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
     ) -> bool {
         let locked_devices = self.sip_devices.lock().unwrap();
         if locked_devices.get(gb_code).is_none() {
@@ -211,7 +211,7 @@ impl StoreEngine for MemoryStore {
         u32,
         String,
         std::net::SocketAddr,
-        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
     )> {
         let result = self.find_device_by_gb_code(gb_code);
         if result.is_none() {
@@ -259,11 +259,11 @@ impl StoreEngine for MemoryStore {
         String,
         String,
         std::net::SocketAddr,
-        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
     )> {
-        let mut cid = String::new();
-        if let Some((_gb_code, call_id, _ts)) = self.gb_streams.lock().unwrap().get(&stream_id) {
-            cid = call_id.clone();
+        let call_id: String;
+        if let Some((_gb_code, call_id_, _ts)) = self.gb_streams.lock().unwrap().get(&stream_id) {
+            call_id = call_id_.clone();
         } else {
             return None;
         }
@@ -280,7 +280,7 @@ impl StoreEngine for MemoryStore {
         }
 
         if let Some((branch, addr, tcp_stream)) = self.find_device_by_gb_code(&gb_code) {
-            return Some((bye_to_device, cid, branch, addr, tcp_stream));
+            return Some((bye_to_device, call_id, branch, addr, tcp_stream));
         }
 
         return None;

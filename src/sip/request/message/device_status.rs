@@ -7,7 +7,7 @@ impl SipHandler {
     pub async fn send_device_status_query(
         &self,
         device_addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         transport: rsip::Transport,
         branch: &String,
         gb_code: &String,

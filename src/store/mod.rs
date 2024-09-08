@@ -34,7 +34,7 @@ pub trait StoreEngine: Send + Sync {
     ) -> Option<(
         String,
         std::net::SocketAddr,
-        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
     )> {
         return None;
     }
@@ -45,7 +45,7 @@ pub trait StoreEngine: Send + Sync {
     ) -> Option<(
         String,
         std::net::SocketAddr,
-        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
     )> {
         return None;
     }
@@ -59,7 +59,7 @@ pub trait StoreEngine: Send + Sync {
         _branch: &String,
         _gb_code: &String,
         _socket_addr: std::net::SocketAddr,
-        _tcp_stream: &Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        _tcp_stream: &Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
     ) -> bool {
         return false;
     }
@@ -82,7 +82,7 @@ pub trait StoreEngine: Send + Sync {
         u32,
         String,
         std::net::SocketAddr,
-        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
     )> {
         return None;
     }
@@ -96,7 +96,7 @@ pub trait StoreEngine: Send + Sync {
         String,
         String,
         std::net::SocketAddr,
-        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
     )> {
         return None;
     }

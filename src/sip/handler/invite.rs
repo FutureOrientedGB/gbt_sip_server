@@ -10,7 +10,7 @@ impl SipHandler {
     pub async fn on_req_invite(
         &self,
         _device_addr: std::net::SocketAddr,
-        _tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        _tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         _request: sip_rs::Request,
     ) {
     }
@@ -18,7 +18,7 @@ impl SipHandler {
     pub async fn on_rsp_invite(
         &self,
         device_addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         response: sip_rs::Response,
     ) {
         if &rsip::StatusCode::Trying == response.status_code() {
@@ -35,7 +35,7 @@ impl SipHandler {
     pub async fn on_rsp_invite_100(
         &self,
         _device_addr: std::net::SocketAddr,
-        _tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        _tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         _response: sip_rs::Response,
     ) {
     }
@@ -43,7 +43,7 @@ impl SipHandler {
     pub async fn on_rsp_invite_200(
         &self,
         device_addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         response: sip_rs::Response,
     ) {
         // decode body

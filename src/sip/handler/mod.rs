@@ -68,7 +68,7 @@ impl SipHandler {
     pub async fn dispatch(
         &self,
         device_addr: SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         sip_data: &[u8],
     ) {
         if sip_data.len() == DOUBLE_CR_LF_BYTES.len() && sip_data == DOUBLE_CR_LF_BYTES {
@@ -87,7 +87,7 @@ impl SipHandler {
     pub async fn dispatch_request(
         &self,
         device_addr: SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         sip_data: &[u8],
     ) {
         match sip_rs::Request::try_from(sip_data) {
@@ -177,7 +177,7 @@ impl SipHandler {
     pub async fn dispatch_response(
         &self,
         device_addr: SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         sip_data: &[u8],
     ) {
         match sip_rs::Response::try_from(sip_data) {

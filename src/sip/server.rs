@@ -120,15 +120,14 @@ pub async fn run_forever(
                     tokio::spawn(async move {
                         let mut buffer = Vec::new();
 
+                        let (mut tcp_stream_reader, tcp_stream_writer) = tcp_stream.into_split();
+
                         let tcp_stream_mutex_arc =
-                            std::sync::Arc::new(tokio::sync::Mutex::new(tcp_stream));
+                            std::sync::Arc::new(tokio::sync::Mutex::new(tcp_stream_writer));
 
                         loop {
                             let mut recv_buff = vec![0; 1024];
-                            let n = match tcp_stream_mutex_arc
-                                .clone()
-                                .lock()
-                                .await
+                            let n = match tcp_stream_reader
                                 .read(&mut recv_buff)
                                 .await
                             {

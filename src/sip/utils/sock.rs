@@ -12,7 +12,7 @@ impl SipHandler {
     pub async fn socket_send_request(
         &self,
         addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         request: sip_rs::Request,
     ) -> bool {
         return self
@@ -29,7 +29,7 @@ impl SipHandler {
     pub async fn socket_send_request_with_body(
         &self,
         addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         request: sip_rs::Request,
         bin_body: Vec<u8>,
         str_body: String,
@@ -43,7 +43,7 @@ impl SipHandler {
     pub async fn socket_send_response(
         &self,
         addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         response: sip_rs::Response,
     ) -> bool {
         return self
@@ -60,7 +60,7 @@ impl SipHandler {
     pub async fn socket_send_response_with_body(
         &self,
         addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         response: sip_rs::Response,
         bin_body: Vec<u8>,
         str_body: String,
@@ -74,7 +74,7 @@ impl SipHandler {
     pub async fn socket_send(
         &self,
         addr: std::net::SocketAddr,
-        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         data: &[u8],
         text: String,
         data_type: &str,
@@ -126,7 +126,7 @@ impl SipHandler {
     pub async fn tcp_socket_send(
         &self,
         addr: std::net::SocketAddr,
-        tcp_stream: std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>,
+        tcp_stream: std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>,
         data: &[u8],
         text: String,
         data_type: &str,

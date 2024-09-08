@@ -8,7 +8,7 @@ impl SipHandler {
     pub async fn on_keep_alive(
         &self,
         _device_addr: std::net::SocketAddr,
-        _tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::TcpStream>>>,
+        _tcp_stream: Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
         request: sip_rs::Request,
         msg: String,
     ) {
