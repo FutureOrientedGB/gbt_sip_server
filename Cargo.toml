@@ -16,6 +16,9 @@ encoding_rs = { version = "0.8.34" }
 
 local-ip-address = { version = "0.6.1" }
 
+prost = { version = "0.13.2" }
+prost-types = { version = "0.13.2" }
+
 rand = { version = "0.8.5" }
 
 regex = { version = "1.10.6" }
@@ -40,6 +43,8 @@ tracing-subscriber = { version = "0.3.18 ", features = ["env-filter", "time", "l
 
 tokio = { version = "1.39.2", features = ["full"] }
 
+tonic = { version = "0.12.2" }
+
 uuid = { version = "1.10.0", features = ["v4", "zerocopy"] }
 
 vec1 = { version = "1.12.1" }
@@ -48,6 +53,7 @@ sysinfo = "0.31.2"
 
 [build-dependencies]
 regex = { version = "1.10.6" }
+tonic-build = { version = "0.12.2" }
 walkdir = { version = "2.5.0" }
 
 

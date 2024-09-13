@@ -22,16 +22,17 @@ pub struct MemoryStore {
             std::collections::HashMap<
                 String,
                 (
-                    String,
-                    std::net::SocketAddr,
-                    Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
-                    u32,
+                    String,                                                                      // branch
+                    std::net::SocketAddr, // udp client addr
+                    Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>, // tcp stream writer
+                    u32, // ts
                 ),
             >,
         >,
-    >, // device gb_code -> (branch, net addr, ts)
-    pub gb_streams:
-        std::sync::Arc<std::sync::Mutex<std::collections::HashMap<u32, (String, String, u32)>>>, // stream_id -> (device gb_code, caller_id, ts)
+    >, // device gb_code -> (branch, net addr, stream server ip, stream server port, ts)
+    pub gb_streams: std::sync::Arc<
+        std::sync::Mutex<std::collections::HashMap<u32, (String, String, String, u16, u32)>>,
+    >, // stream_id -> (device gb_code, caller_id, ts)
     pub gb_streams_rev:
         std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, Vec<u32>>>>, // device gb_code -> [stream_id]
 }
@@ -60,7 +61,7 @@ impl MemoryStore {
             >::default())),
             gb_streams: std::sync::Arc::new(std::sync::Mutex::new(std::collections::HashMap::<
                 u32,
-                (String, String, u32),
+                (String, String, String, u16, u32),
             >::default())),
             gb_streams_rev: std::sync::Arc::new(std::sync::Mutex::new(
                 std::collections::HashMap::<String, Vec<u32>>::default(),
@@ -137,7 +138,9 @@ impl StoreEngine for MemoryStore {
     }
 
     fn find_gb_code(&self, stream_id: u32) -> String {
-        if let Some((gb_code, _caller_id, _ts)) = self.gb_streams.lock().unwrap().get(&stream_id) {
+        if let Some((gb_code, _caller_id, _stream_server_ip, _stream_server_port, _ts)) =
+            self.gb_streams.lock().unwrap().get(&stream_id)
+        {
             return gb_code.to_string();
         }
         return String::new();
@@ -232,10 +235,10 @@ impl StoreEngine for MemoryStore {
             .expect("Time went backwards")
             .as_secs() as u32;
 
-        self.gb_streams
-            .lock()
-            .unwrap()
-            .insert(stream_id, (gb_code.clone(), caller_id.clone(), ts));
+        self.gb_streams.lock().unwrap().insert(
+            stream_id,
+            (gb_code.clone(), caller_id.clone(), String::new(), 0, ts),
+        );
 
         let is_playing = self.gb_streams_rev.lock().unwrap().get(gb_code).is_some();
 
@@ -250,6 +253,28 @@ impl StoreEngine for MemoryStore {
         return Some((is_playing, stream_id, branch, device_addr, tcp_stream));
     }
 
+    fn update_stream_server_info(
+        &self,
+        stream_id: u32,
+        stream_server_ip: String,
+        stream_server_port: u16,
+    ) {
+        let locked_streams = self.gb_streams.lock().unwrap();
+        if let Some((gb_code, caller_id, _stream_server_ip, _stream_server_port, ts)) =
+            locked_streams.get(&stream_id)
+        {
+            let cid = caller_id.clone();
+            let t = *ts;
+            let g = gb_code.clone();
+            drop(locked_streams);
+
+            self.gb_streams
+                .lock()
+                .unwrap()
+                .insert(stream_id, (g, cid, stream_server_ip, stream_server_port, t));
+        }
+    }
+
     fn bye(
         &self,
         gb_code: &String,
@@ -260,10 +285,18 @@ impl StoreEngine for MemoryStore {
         String,
         std::net::SocketAddr,
         Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
+        String,
+        u16,
     )> {
         let call_id: String;
-        if let Some((_gb_code, call_id_, _ts)) = self.gb_streams.lock().unwrap().get(&stream_id) {
+        let ip: String;
+        let port: u16;
+        if let Some((_gb_code, call_id_, stream_server_ip, stream_server_port, _ts)) =
+            self.gb_streams.lock().unwrap().get(&stream_id)
+        {
             call_id = call_id_.clone();
+            ip = stream_server_ip.clone();
+            port = *stream_server_port;
         } else {
             return None;
         }
@@ -280,7 +313,7 @@ impl StoreEngine for MemoryStore {
         }
 
         if let Some((branch, addr, tcp_stream)) = self.find_device_by_gb_code(&gb_code) {
-            return Some((bye_to_device, call_id, branch, addr, tcp_stream));
+            return Some((bye_to_device, call_id, branch, addr, tcp_stream, ip, port));
         }
 
         return None;
@@ -288,8 +321,12 @@ impl StoreEngine for MemoryStore {
 
     fn stream_keep_alive(&self, gb_code: &String, stream_id: u32) -> bool {
         let locked_streams = self.gb_streams.lock().unwrap();
-        if let Some((_gb_code, caller_id, _ts)) = locked_streams.get(&stream_id) {
+        if let Some((_gb_code, caller_id, stream_server_ip, stream_server_port, _ts)) =
+            locked_streams.get(&stream_id)
+        {
             let cid = caller_id.clone();
+            let ip = stream_server_ip.clone();
+            let port = *stream_server_port;
             drop(locked_streams);
 
             let ts = std::time::SystemTime::now()
@@ -300,7 +337,7 @@ impl StoreEngine for MemoryStore {
             self.gb_streams
                 .lock()
                 .unwrap()
-                .insert(stream_id, (gb_code.clone(), cid, ts));
+                .insert(stream_id, (gb_code.clone(), cid, ip, port, ts));
             return true;
         }
         return false;
@@ -329,7 +366,11 @@ impl StoreEngine for MemoryStore {
                     .as_secs() as u32;
 
                 let mut timeout_streams = Vec::<(String, u32)>::default();
-                for (stream_id, (gb_code, _caller_id, ts)) in gb_streams.lock().unwrap().iter() {
+                for (
+                    stream_id,
+                    (gb_code, _caller_id, _stream_server_ip, _stream_server_port, ts),
+                ) in gb_streams.lock().unwrap().iter()
+                {
                     if *ts - ts_now > stream_timeout_seconds {
                         timeout_streams.push((gb_code.clone(), *stream_id));
                     }

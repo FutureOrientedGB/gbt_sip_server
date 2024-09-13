@@ -4,6 +4,10 @@ pub mod store;
 pub mod utils;
 pub mod version;
 
+pub mod gss {
+    tonic::include_proto!("gss");
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // parse command line arguments

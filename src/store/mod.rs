@@ -87,6 +87,14 @@ pub trait StoreEngine: Send + Sync {
         return None;
     }
 
+    fn update_stream_server_info(
+        &self,
+        _stream_id: u32,
+        _stream_server_ip: String,
+        _stream_server_port: u16,
+    ) {
+    }
+
     fn bye(
         &self,
         _gb_code: &String,
@@ -97,6 +105,8 @@ pub trait StoreEngine: Send + Sync {
         String,
         std::net::SocketAddr,
         Option<std::sync::Arc<tokio::sync::Mutex<tokio::net::tcp::OwnedWriteHalf>>>,
+        String,
+        u16,
     )> {
         return None;
     }
@@ -115,10 +125,7 @@ pub trait StoreEngine: Send + Sync {
     fn stop_timeout_check(&mut self) {}
 }
 
-
-pub fn create_store(
-    cli_args: &CommandLines,
-) -> Box<dyn StoreEngine> {
+pub fn create_store(cli_args: &CommandLines) -> Box<dyn StoreEngine> {
     match cli_args.store_engine.as_str() {
         "memory" => {
             return Box::new(memory::MemoryStore::new(cli_args));
